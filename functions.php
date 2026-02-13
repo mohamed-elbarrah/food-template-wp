@@ -17,14 +17,20 @@ function blocksy_child_food_products_shortcode( $atts ) {
 	}
 
 	$atts = shortcode_atts( array(
-		'limit'    => 6,
-		'columns'  => 3,
-		'category' => '',
+		'limit'         => 6,
+		'columns'       => 3,
+		'category'      => '',
+		'show_more'     => 'false',
+		'show_more_text'=> 'View All',
+		'show_more_class'=> '',
 	), $atts, 'food_products' );
 
-	$limit   = absint( $atts['limit'] );
-	$columns = absint( $atts['columns'] );
-	$cat     = sanitize_text_field( $atts['category'] );
+	$limit    = absint( $atts['limit'] );
+	$columns  = absint( $atts['columns'] );
+	$cat      = sanitize_text_field( $atts['category'] );
+	$show_more = filter_var( $atts['show_more'], FILTER_VALIDATE_BOOLEAN );
+	$show_more_text = sanitize_text_field( $atts['show_more_text'] );
+	$show_more_class = sanitize_text_field( $atts['show_more_class'] );
 
 	// Use WP_Query to fetch products so category by slug works reliably
 	$query_args = array(
@@ -97,6 +103,35 @@ function blocksy_child_food_products_shortcode( $atts ) {
 	wp_reset_postdata();
 
 	$out .= '</div>'; // .product-grid
+
+	// optional show more button (links to category archive if provided, else shop)
+	if ( $show_more ) {
+		$more_url = '';
+		if ( $cat ) {
+			$cats = array_map( 'trim', explode( ',', $cat ) );
+			// try first category slug to build archive link
+			$term = get_term_by( 'slug', $cats[0], 'product_cat' );
+			if ( $term && ! is_wp_error( $term ) ) {
+				$more_url = get_term_link( $term );
+			} else {
+				// fallback to shop with query param
+				$shop_id = wc_get_page_id( 'shop' );
+				$more_url = get_permalink( $shop_id );
+				if ( $more_url ) {
+					$more_url = add_query_arg( 'product_cat', $cats[0], $more_url );
+				}
+			}
+		} else {
+			$shop_id = wc_get_page_id( 'shop' );
+			$more_url = get_permalink( $shop_id );
+		}
+
+		if ( $more_url ) {
+			$out .= '<div class="food-products-footer">';
+			$out .= '<a class="food-show-more ' . esc_attr( $show_more_class ) . '" href="' . esc_url( $more_url ) . '">' . esc_html( $show_more_text ) . '</a>';
+			$out .= '</div>';
+		}
+	}
 
 	return $out;
 }

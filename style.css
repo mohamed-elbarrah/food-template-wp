@@ -205,5 +205,18 @@
 	@media (max-width: 900px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
 	@media (max-width: 600px) { .product-grid { grid-template-columns: 1fr; } }
 
+	/* Show more button styles */
+	.food-products-footer { text-align: center; margin-top: 18px; }
+	.food-show-more {
+		display: inline-block;
+		background: #081a3a;
+		color: #ffffff;
+		padding: 10px 18px;
+		border-radius: 10px;
+		text-decoration: none;
+		font-weight: 700;
+	}
+	.food-show-more:hover { opacity: 0.95; }
+
 
 
