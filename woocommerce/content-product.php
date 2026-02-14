@@ -17,42 +17,35 @@ $excerpt   = wp_kses_post( wp_trim_words( get_the_excerpt(), 25, '...' ) );
 $price     = $product->get_price_html();
 
 ?>
-<div class="food-card" itemscope itemtype="http://schema.org/Product">
-    <div class="food-card-info">
-        <a href="<?php echo $permalink; ?>" class="food-link">
-            <h2 class="food-title" itemprop="name"><?php echo $title; ?></h2>
+<article class="product-card" itemscope itemtype="http://schema.org/Product">
+    <div class="card-image">
+        <a href="<?php echo $permalink; ?>" class="product-link" aria-label="<?php esc_attr_e( 'View product', 'blocksy-child' ); ?>">
+            <?php echo get_the_post_thumbnail( $product->get_id(), 'large', array( 'loading' => 'lazy' ) ); ?>
         </a>
-
-        <p class="food-description" itemprop="description"><?php echo $excerpt; ?></p>
-
-        <div class="food-price" itemprop="offers" itemscope itemtype="http://schema.org/Offer">
-            <?php
-            // Structured price output: currency code + numeric amount
-            $raw_price     = $product->get_price();
-            $display_price = wc_get_price_to_display( $product );
-            $decimals      = wc_get_price_decimals();
-            $decimal_sep   = wc_get_price_decimal_separator();
-            $thousand_sep  = wc_get_price_thousand_separator();
-            $amount        = number_format( (float) $display_price, $decimals, $decimal_sep, $thousand_sep );
-            $currency_code = get_woocommerce_currency();
-            ?>
-
-            <span class="price-code"><?php echo esc_html( $currency_code ); ?></span>
-            <span class="price-amount"><?php echo esc_html( $amount ); ?></span>
-        </div>
     </div>
 
-    <div class="food-card-media">
-        <div class="yellow-box">
-            <?php echo $product->get_image( 'woocommerce_thumbnail' ); ?>
+    <div class="card-content">
+        <div class="title-price-row">
+            <a href="<?php echo $permalink; ?>" class="product-link"><h3 class="product-title" itemprop="name"><?php echo $title; ?></h3></a>
+        </div>
 
-            <div class="add-button-wrapper">
-                <?php if ( $product->is_type( 'simple' ) ) : ?>
-                    <a href="<?php echo esc_url( $product->add_to_cart_url() ); ?>" class="add-btn add_to_cart_button" aria-label="<?php esc_attr_e( 'Add to cart', 'blocksy-child' ); ?>">+</a>
-                <?php else : ?>
-                    <a href="<?php echo $permalink; ?>" class="add-btn" aria-label="<?php esc_attr_e( 'View product', 'blocksy-child' ); ?>">+</a>
-                <?php endif; ?>
+        <p class="ingredients"><?php echo $excerpt; ?></p>
+
+        <div class="card-footer">
+            <div class="price-rating-row">
+                <span class="price"><?php echo wc_price( wc_get_price_to_display( $product ) ); ?></span>
+
+                <div class="rating">
+                    <span class="rating-value"><?php echo number_format( (float) $product->get_average_rating(), 1 ); ?></span>
+                    <span class="star">★</span>
+                </div>
             </div>
+
+            <?php if ( $product->is_type( 'simple' ) ) : ?>
+                <a href="<?php echo esc_url( $product->add_to_cart_url() ); ?>" class="add-btn add_to_cart_button full-width-btn"><?php esc_html_e( 'اطلب الحين', 'blocksy-child' ); ?></a>
+            <?php else : ?>
+                <a href="<?php echo $permalink; ?>" class="add-btn full-width-btn"><?php esc_html_e( 'View Product', 'blocksy-child' ); ?></a>
+            <?php endif; ?>
         </div>
     </div>
-</div>
+</article>
