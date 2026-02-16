@@ -1,5 +1,50 @@
-.bcpo-group{border:1px solid #e1e1e1;padding:10px;margin:10px 0;background:#fff}
+.bcpo-group{border:1px solid #e1e1e1;padding:14px;margin:12px 0;background:#fff;border-radius:6px;box-shadow:0 1px 0 rgba(0,0,0,0.03)}
+.bcpo-group .bcpo-field{margin-bottom:8px}
+.bcpo-group .bcpo-label{display:block;font-weight:600;margin-bottom:6px}
+.bcpo-help.small{color:#6c6c6c;font-size:12px;margin:6px 0 10px}
+.bcpo-desc{display:block;color:#6c6c6c;font-size:13px}
 .bcpo-option{display:flex;gap:8px;align-items:center;margin-bottom:6px}
-.bcpo-option input{width:200px}
+
+/* Place labels above inputs for BCPO fields to avoid inline label layout */
+#bcpo_product_options .form-field > label,
+#bcpo_product_options label.bcpo-label {
+	display: block !important;
+	float: none !important;
+	width: auto !important;
+	margin: 0 0 6px 0 !important;
+	text-align: right !important;
+}
+
+#bcpo_product_options {
+  padding: 16px !important;
+}
+
+#bcpo_product_options .form-field input,
+#bcpo_product_options .form-field select,
+#bcpo_product_options .form-field textarea {
+	display: block !important;
+	width: 100% !important;
+	max-width: 100% !important;
+	box-sizing: border-box !important;
+    padding: 16px !important;
+}
+
+/* Keep short fields narrower (e.g., price inputs) */
+#bcpo_product_options .form-field.form-field-short input,
+#bcpo_product_options .form-field.form-field-short select {
+	width: 220px !important;
+}
+
+/* Ensure remove/add buttons don't float beside inputs */
+#bcpo_product_options .form-field .button { display: inline-block; margin-top:6px }
+.bcpo-option input{width:260px}
+.bcpo-opt-price{width:120px}
 .bcpo-title{width:50%}
-.bcpo-options{margin-left:10px}
+.bcpo-options{margin-left:0;padding:8px 0}
+.bcpo-options-title{font-weight:700;margin-bottom:6px}
+.bcpo-helpbox{background:#fffbe6;border-right:4px solid #ffd54f;padding:12px;margin:12px 0;border-radius:4px}
+.bcpo-helpbox .bcpo-help-steps{margin:8px 0 8 18px;padding:0}
+.bcpo-actions{margin-top:12px}
+
+/* Description textarea styling */
+.bcpo-desc-input{width:100%;min-height:56px;box-sizing:border-box;padding:8px;border:1px solid #e1e1e1;border-radius:4px}

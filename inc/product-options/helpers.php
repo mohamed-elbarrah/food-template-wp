@@ -26,6 +26,7 @@ function bcpo_sanitize_options_array( $input ) {
         $g['title'] = isset( $group['title'] ) ? sanitize_text_field( $group['title'] ) : '';
         $g['type']  = in_array( $group['type'], bcpo_allowed_field_types(), true ) ? $group['type'] : 'text';
         $g['required'] = ! empty( $group['required'] ) ? 1 : 0;
+        $g['description'] = isset( $group['description'] ) ? sanitize_textarea_field( $group['description'] ) : '';
         $g['options'] = array();
         if ( ! empty( $group['options'] ) && is_array( $group['options'] ) ) {
             foreach ( $group['options'] as $opt ) {

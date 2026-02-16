@@ -7,26 +7,36 @@
     function buildOptionRow(optIndex, opt){
         opt = opt || {label:'',price:0};
         return $('<div class="bcpo-option">')
-            .append($('<input type="text" class="bcpo-opt-label" placeholder="Label">').val(opt.label))
-            .append($('<input type="number" step="0.01" class="bcpo-opt-price" placeholder="Price">').val(opt.price))
-            .append($('<button type="button" class="button bcpo-remove-opt">Remove</button>'));
+            .append($('<input type="text" class="bcpo-opt-label" placeholder="اسم الخيار">').val(opt.label))
+            .append($('<input type="number" step="0.01" class="bcpo-opt-price" placeholder="السعر الإضافي">').val(opt.price))
+            .append($('<button type="button" class="button bcpo-remove-opt">حذف الخيار</button>'));
     }
 
     function renderGroup(index, group){
         group = group || {title:'',type:'text',required:0,options:[]};
         var $g = $('<div class="bcpo-group" data-index="'+index+'">');
-        $g.append($('<p>').append($('<label>Title: </label>')).append('<input class="bcpo-title" type="text">').find('input').val(group.title).end());
+        $g.append($('<p class="bcpo-field">').append($('<label class="bcpo-label">عنوان القسم</label>')).append('<input class="bcpo-title" type="text">').find('input').val(group.title).end());
+        $g.append($('<p class="bcpo-help small">').text('اكتب عنوان هذا القسم كما سيظهر للعميل. مثال: اختر الحجم – مستوى الحرارة – الإضافات.'));
         var $type = $('<select class="bcpo-type">');
-        allowedTypes.forEach(function(t){ $type.append('<option value="'+t+'">'+t+'</option>'); });
+        // Arabic labels for types
+        $type.append('<option value="radio">اختيار واحد</option>');
+        $type.append('<option value="checkbox">اختيار متعدد</option>');
+        $type.append('<option value="select">قائمة منسدلة</option>');
+        $type.append('<option value="text">حقل نصي</option>');
         $type.val(group.type);
-        $g.append($('<p>').append($('<label>Type: </label>')).append($type));
-        $g.append($('<p>').append($('<label>Required: </label>')).append('<input type="checkbox" class="bcpo-required">').find('input').prop('checked', !!group.required).end());
+        $g.append($('<p class="bcpo-field">').append($('<label class="bcpo-label">طريقة اختيار العميل</label>')).append($type));
+        $g.append($('<p class="bcpo-help small">').text('حدد كيف سيختار العميل الخيارات داخل هذا القسم: اختيار واحد، اختيار متعدد، قائمة منسدلة، أو حقل نصي لكتابة ملاحظة.'));
+        $g.append($('<p class="bcpo-field">').append($('<label class="bcpo-label">هذا القسم إلزامي</label>')).append('<input type="checkbox" class="bcpo-required">').find('input').prop('checked', !!group.required).end());
+        $g.append($('<p class="bcpo-help small">').text('عند التفعيل، لن يتمكن العميل من إتمام الطلب بدون اختيار من هذا القسم.'));
+        $g.append($('<p class="form-field form-field-wide">').append($('<label class="bcpo-label">وصف توضيحي (اختياري)</label>')).append($('<textarea class="bcpo-desc-input" rows="2" placeholder="يمكنك كتابة ملاحظة قصيرة لمساعدة العميل. مثال: يمكنك اختيار 3 إضافات كحد أقصى."></textarea>').val(group.description || '')));
         // min/max selection removed per spec
         var $opts = $('<div class="bcpo-options">');
+        $opts.append($('<p class="bcpo-options-title">').text('الخيارات المتاحة داخل هذا القسم'));
+        $opts.append($('<p class="bcpo-help small">').text('أضف الخيارات التي يمكن للعميل اختيارها. إذا لم يكن هناك سعر إضافي اترك السعر 0.'));
         (group.options||[]).forEach(function(opt,i){ $opts.append(buildOptionRow(i,opt)); });
-        $opts.append($('<p>').append($('<button type="button" class="button bcpo-add-opt">Add Option</button>')));
+        $opts.append($('<p>').append($('<button type="button" class="button bcpo-add-opt">إضافة خيار جديد</button>')));
         $g.append($opts);
-        $g.append($('<p>').append($('<button type="button" class="button bcpo-remove-group">Remove Group</button>')));
+        $g.append($('<p>').append($('<button type="button" class="button bcpo-remove-group">حذف هذا القسم بالكامل</button>')));
         return $g;
     }
 
@@ -47,7 +57,8 @@
             group.title = $g.find('.bcpo-title').val();
             group.type = $g.find('.bcpo-type').val();
             group.required = $g.find('.bcpo-required').is(':checked') ? 1 : 0;
-            // min/max removed; not collected
+            // collect description
+            group.description = $g.find('.bcpo-desc-input').val() || '';
             group.options = [];
             $g.find('.bcpo-option').each(function(){
                 var $o = $(this);
