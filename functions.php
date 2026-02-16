@@ -282,3 +282,8 @@ function blocksy_child_print_color_vars() {
 	echo '}</style>' . "\n";
 }
 add_action( 'wp_head', 'blocksy_child_print_color_vars', 5 );
+
+// Load product options admin module
+if ( file_exists( get_stylesheet_directory() . '/inc/product-options/init.php' ) ) {
+	require_once get_stylesheet_directory() . '/inc/product-options/init.php';
+}

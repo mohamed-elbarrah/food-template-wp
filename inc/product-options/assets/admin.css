@@ -1,0 +1,5 @@
+.bcpo-group{border:1px solid #e1e1e1;padding:10px;margin:10px 0;background:#fff}
+.bcpo-option{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.bcpo-option input{width:200px}
+.bcpo-title{width:50%}
+.bcpo-options{margin-left:10px}
