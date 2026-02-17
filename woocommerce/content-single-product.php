@@ -19,6 +19,13 @@ if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
       <div class="single-excerpt"><?php echo wp_kses_post( wpautop( $short ) ); ?></div>
     <?php endif; ?>
 
+    <?php
+    /**
+     * Render product options from BCPO above the card footer so they appear
+     * before the add-to-cart controls rather than inside the form.
+     */
+    do_action( 'bcpo_render_product_options', $product->get_id() );
+    ?>
     <div class="card-footer">
       <div class="price-rating-row">
         <span class="price"><?php echo wc_price( wc_get_price_to_display( $product ) ); ?></span>
@@ -37,6 +44,7 @@ if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
               <input type="number" name="quantity" value="1" min="1" step="1" class="qty-input" aria-label="Quantity" readonly="readonly" />
               <button type="button" class="qty-btn qty-increase" aria-label="Increase quantity">+</button>
             </div>
+            
             <input type="hidden" name="add-to-cart" value="<?php echo esc_attr( $product->get_id() ); ?>" />
             <button type="submit" class="add-btn full-width-btn"><?php echo esc_html__( 'اطلب الحين', 'blocksy-child' ); ?></button>
           </form>

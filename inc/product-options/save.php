@@ -29,5 +29,5 @@ add_action( 'woocommerce_process_product_meta', function( $post_id ) {
         return;
     }
 
-    update_post_meta( $post_id, '_custom_product_options', wp_json_encode( $sanitized ) );
+    update_post_meta( $post_id, '_custom_product_options', wp_json_encode( $sanitized, JSON_UNESCAPED_UNICODE ) );
 } );

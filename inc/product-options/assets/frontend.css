@@ -1,0 +1,18 @@
+.bcpo-frontend{margin:12px 0 18px}
+.bcpo-group-frontend{margin-bottom:12px;border:1px dashed #f0f0f0;padding:12px;border-radius:8px}
+.bcpo-group-title{font-weight:700;margin-bottom:8px}
+.bcpo-multi-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;margin:6px;border-radius:24px;background:linear-gradient(180deg,#fff7f0,#ffe7d6);border:1px solid rgba(255,130,50,0.15);cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}
+.bcpo-multi-btn input{display:none}
+.bcpo-multi-btn .bcpo-btn-label{font-weight:600;color:#d35400}
+.bcpo-multi-btn .bcpo-btn-price{font-size:12px;color:#b65a2a;background:rgba(255,255,255,0.6);padding:4px 8px;border-radius:12px;margin-left:6px}
+.bcpo-multi-btn:hover{transform:translateY(-4px);box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+.bcpo-multi-btn input:checked + .bcpo-btn-label{color:#fff}
+.bcpo-multi-btn input:checked + .bcpo-btn-label + .bcpo-btn-price{background:rgba(255,255,255,0.15);color:#fff}
+.bcpo-multi-btn input:checked + .bcpo-btn-label{background:linear-gradient(90deg,#ffd6b8,#ffb48a);padding:6px 10px;border-radius:16px}
+.bcpo-multi-btn--wrap{display:flex;flex-wrap:wrap;gap:8px}
+
+/* Responsive tweaks */
+@media (max-width:600px){
+  .bcpo-multi-btn{padding:6px 10px;margin:4px}
+  .bcpo-btn-price{display:none}
+}

@@ -28,9 +28,9 @@ add_action( 'woocommerce_product_options_pricing', function() {
 
     wp_nonce_field( 'bcpo_save_options', 'bcpo_nonce' );
     echo '<div class="bcpo-groups-wrap">';
-    echo '<div id="bcpo-groups" data-saved="' . esc_attr( wp_json_encode( $saved ) ) . '"></div>';
+    echo '<div id="bcpo-groups" data-saved="' . esc_attr( wp_json_encode( $saved, JSON_UNESCAPED_UNICODE ) ) . '"></div>';
     echo '<p class="bcpo-actions"><button type="button" class="button" id="bcpo-add-group">' . esc_html__( 'إضافة مجموعة تخصيص', 'blocksy-child' ) . '</button></p>';
-    echo '<input type="hidden" id="bcpo_payload" name="bcpo_payload" value="' . esc_attr( wp_json_encode( $saved ) ) . '">';
+    echo '<input type="hidden" id="bcpo_payload" name="bcpo_payload" value="' . esc_attr( wp_json_encode( $saved, JSON_UNESCAPED_UNICODE ) ) . '">';
     echo '</div>';
     echo '</div>';
 } );
