@@ -287,3 +287,102 @@ add_action( 'wp_head', 'blocksy_child_print_color_vars', 5 );
 if ( file_exists( get_stylesheet_directory() . '/inc/product-options/init.php' ) ) {
 	require_once get_stylesheet_directory() . '/inc/product-options/init.php';
 }
+
+/**
+ * AJAX handler to submit a quick product rating.
+ * Saves a comment with meta key 'rating' so WooCommerce can pick it up.
+ */
+function bcpo_ajax_submit_rating() {
+	// check nonce
+	if ( empty( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'bcpo-rate' ) ) {
+		wp_send_json_error( array( 'message' => 'Invalid nonce' ), 403 );
+	}
+
+	$product_id = isset( $_POST['product_id'] ) ? intval( wp_unslash( $_POST['product_id'] ) ) : 0;
+	$rating = isset( $_POST['rating'] ) ? intval( wp_unslash( $_POST['rating'] ) ) : 0;
+	$comment = isset( $_POST['comment'] ) ? sanitize_text_field( wp_unslash( $_POST['comment'] ) ) : '';
+	$comment_id = isset( $_POST['comment_id'] ) ? intval( wp_unslash( $_POST['comment_id'] ) ) : 0;
+
+	if ( $product_id <= 0 || $rating < 1 || $rating > 5 ) {
+		wp_send_json_error( array( 'message' => 'Invalid data' ), 400 );
+	}
+
+	$user = wp_get_current_user();
+	$author_name = $user && $user->exists() ? $user->display_name : 'زائر';
+
+	if ( $comment_id > 0 ) {
+		// attempt to update existing comment - only allow owner or admin
+		$existing = get_comment( $comment_id );
+		if ( ! $existing || intval( $existing->comment_post_ID ) !== $product_id ) {
+			wp_send_json_error( array( 'message' => 'Invalid comment' ), 400 );
+		}
+		$allowed = false;
+		if ( $user && $user->exists() && intval( $existing->user_id ) === intval( $user->ID ) ) {
+			$allowed = true;
+		}
+		if ( ! $allowed && current_user_can( 'manage_options' ) ) {
+			$allowed = true; // admins may edit
+		}
+		if ( ! $allowed ) {
+			wp_send_json_error( array( 'message' => 'Not allowed to edit this review' ), 403 );
+		}
+
+		$update = array(
+			'comment_ID'      => $comment_id,
+			'comment_content' => $comment,
+			'comment_approved'=> 1,
+		);
+		$res = wp_update_comment( $update );
+		if ( ! $res ) {
+			wp_send_json_error( array( 'message' => 'Could not update rating' ), 500 );
+		}
+		update_comment_meta( $comment_id, 'rating', $rating );
+		$saved_comment_id = $comment_id;
+	} else {
+		$commentdata = array(
+			'comment_post_ID' => $product_id,
+			'comment_author'  => $author_name,
+			'comment_author_email' => $user && $user->exists() ? $user->user_email : '',
+			'comment_content' => $comment,
+			'comment_type'    => 'review',
+			'comment_parent'  => 0,
+			'user_id'         => $user && $user->exists() ? intval( $user->ID ) : 0,
+			'comment_approved'=> 1,
+		);
+
+		$saved_comment_id = wp_insert_comment( $commentdata );
+		if ( ! $saved_comment_id ) {
+			wp_send_json_error( array( 'message' => 'Could not save rating' ), 500 );
+		}
+
+		// save rating meta in the format WooCommerce expects
+		add_comment_meta( $saved_comment_id, 'rating', $rating );
+	}
+
+	// update product rating caches if WooCommerce function exists
+	if ( function_exists( 'wc_update_product_review_count' ) ) {
+		// update cached counts/rating
+		try {
+			wc_update_product_review_count( $product_id );
+		} catch ( Exception $e ) {
+			// ignore
+		}
+	}
+
+	// Attempt to clear related caches/transients so later reads reflect new values
+	if ( function_exists( 'wc_delete_product_transients' ) ) {
+		wc_delete_product_transients( $product_id );
+	}
+	// clear post caches
+	if ( function_exists( 'clean_post_cache' ) ) {
+		clean_post_cache( $product_id );
+	}
+
+	// read back the updated product average so frontend can update UI without reload
+	$product_obj = wc_get_product( $product_id );
+	$new_average = $product_obj ? floatval( $product_obj->get_average_rating() ) : 0.0;
+
+	wp_send_json_success( array( 'comment_id' => $saved_comment_id, 'average' => $new_average ) );
+}
+add_action( 'wp_ajax_bcpo_submit_rating', 'bcpo_ajax_submit_rating' );
+add_action( 'wp_ajax_nopriv_bcpo_submit_rating', 'bcpo_ajax_submit_rating' );

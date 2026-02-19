@@ -2,7 +2,7 @@
 (function($){
     'use strict';
 
-    var allowedTypes = ['radio','checkbox','select','text'];
+    var allowedTypes = ['radio','checkbox'];
 
     function buildOptionRow(optIndex, opt){
         opt = opt || {label:'',price:0};
@@ -18,14 +18,12 @@
         $g.append($('<p class="bcpo-field">').append($('<label class="bcpo-label">عنوان القسم</label>')).append('<input class="bcpo-title" type="text">').find('input').val(group.title).end());
         $g.append($('<p class="bcpo-help small">').text('اكتب عنوان هذا القسم كما سيظهر للعميل. مثال: اختر الحجم – مستوى الحرارة – الإضافات.'));
         var $type = $('<select class="bcpo-type">');
-        // Arabic labels for types
+        // Only two modes: single choice (radio) or multiple choice (checkbox)
         $type.append('<option value="radio">اختيار واحد</option>');
         $type.append('<option value="checkbox">اختيار متعدد</option>');
-        $type.append('<option value="select">قائمة منسدلة</option>');
-        $type.append('<option value="text">حقل نصي</option>');
-        $type.val(group.type);
+        $type.val( inArray(group.type, allowedTypes) ? group.type : 'radio' );
         $g.append($('<p class="bcpo-field">').append($('<label class="bcpo-label">طريقة اختيار العميل</label>')).append($type));
-        $g.append($('<p class="bcpo-help small">').text('حدد كيف سيختار العميل الخيارات داخل هذا القسم: اختيار واحد، اختيار متعدد، قائمة منسدلة، أو حقل نصي لكتابة ملاحظة.'));
+        $g.append($('<p class="bcpo-help small">').text('حدد طريقة اختيار العميل: اختيار واحد أو اختيار متعدد.'));
         $g.append($('<p class="bcpo-field">').append($('<label class="bcpo-label">هل هذا القسم إلزامي</label>')).append('<input type="checkbox" class="bcpo-required">').find('input').prop('checked', !!group.required).end());
         $g.append($('<p class="bcpo-help small">').text('عند التفعيل، لن يتمكن العميل من إتمام الطلب بدون اختيار من هذا القسم.'));
         $g.append($('<p class="form-field form-field-wide">').append($('<label class="bcpo-label">وصف توضيحي (اختياري)</label>')).append($('<textarea class="bcpo-desc-input" rows="2" placeholder="يمكنك كتابة ملاحظة قصيرة لمساعدة العميل. مثال: يمكنك اختيار 3 إضافات كحد أقصى."></textarea>').val(group.description || '')));
@@ -43,6 +41,13 @@
     function readPayload(){
         var raw = $('#bcpo_payload').val();
         try{ return JSON.parse(raw||'[]'); }catch(e){ return []; }
+    }
+
+    // tiny helper: safe check for array membership
+    function inArray(needle, haystack){
+        if (!needle) return false;
+        for (var i=0;i<haystack.length;i++){ if (haystack[i] === needle) return true; }
+        return false;
     }
 
     function writePayload(data){

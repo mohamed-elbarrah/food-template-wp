@@ -1,5 +1,5 @@
 .bcpo-frontend{margin:12px 0 18px}
-.bcpo-group-frontend{margin-bottom:12px;border:1px dashed var(--muted-border,#f0f0f0);padding:14px;border-radius:10px}
+.bcpo-group-frontend{margin-bottom:12px;border:1px dashed var(--muted-border,#f0f0f0);padding:14px 0px;border-radius:10px}
 .bcpo-group-title{font-weight:700;margin-bottom:10px;color:var(--text-dark,#0b1623)}
 .bcpo-multi-btn{display:inline-flex;align-items:center;gap:10px;padding:10px 18px;margin:6px;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,0.95),var(--bg-light,#fff));border:1px solid rgba(0,0,0,0.04);cursor:pointer;transition:transform .18s cubic-bezier(.2,.9,.2,1),box-shadow .18s cubic-bezier(.2,.9,.2,1),background .18s ease,color .12s ease}
 .bcpo-multi-btn input{position:absolute;opacity:0;width:0;height:0}
@@ -24,4 +24,51 @@
 @media (max-width:600px){
   .bcpo-multi-btn{padding:8px 12px;margin:6px}
   .bcpo-btn-price{display:inline-block;font-size:11px}
+}
+
+/* New pill-style option UI */
+.food-options-container{display:flex;flex-wrap:wrap;gap:8px;direction:rtl;padding:6px 0}
+.option-item{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;min-width:110px;border-radius:50px;border:1px solid var(--paletteColor6,#eee);background:var(--paletteColor8,#fff);cursor:pointer;transition:all .18s cubic-bezier(.4,0,.2,1);user-select:none}
+.option-item:hover{border-color:var(--paletteColor3,#f58220);box-shadow:0 2px 6px rgba(0,0,0,0.04);transform:translateY(-1px)}
+.option-item.active{background:var(--paletteColor3,#f58220);border-color:var(--paletteColor3,#f58220);box-shadow:0 4px 10px rgba(245,130,32,0.2)}
+.option-name{font-size:.88rem;font-weight:600;color:var(--paletteColor1,#333);margin-left:8px}
+.option-item.active .option-name{color:#fff}
+.option-price-badge{font-size:.75rem;font-weight:700;padding:3px 8px;border-radius:20px;background:var(--paletteColor5,#f5f5f5);color:var(--paletteColor2,#666);transition:all .15s ease}
+.option-item.active .option-price-badge{background:rgba(255,255,255,0.18);color:#fff}
+.option-price-badge.free{font-weight:800}
+
+/* hide native inputs but keep them accessible */
+.bcpo-hidden-input{position:absolute;opacity:0;width:0;height:0}
+
+@media (prefers-reduced-motion:reduce){.option-item{transition:none}}
+
+@media (max-width:600px){
+  .option-item{min-width:96px;padding:6px 10px}
+  .option-name{font-size:.82rem}
+  .option-price-badge{font-size:.7rem;padding:2px 6px}
+}
+
+/* Price change slide animation */
+.bcpo-price-anim{display:inline-block;position:relative;overflow:hidden;vertical-align:middle}
+.bcpo-price-anim .price-item{display:inline-block;white-space:nowrap;transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .22s ease}
+.bcpo-price-anim .price-item.enter{transform:translateY(100%);opacity:0}
+.bcpo-price-anim .price-item.enter.active{transform:translateY(0);opacity:1}
+.bcpo-price-anim .price-item.exit{transform:translateY(0);opacity:1;position:absolute;left:0;top:0}
+.bcpo-price-anim .price-item.exit.active{transform:translateY(-100%);opacity:0}
+
+@media (prefers-reduced-motion:reduce){
+  .bcpo-price-anim .price-item{transition:none}
+}
+
+/* Numeric-only animation (compact) */
+.bcpo-price-num-target .bcpo-num-wrap{display:inline-block;position:relative;overflow:hidden;vertical-align:middle; direction: initial;}
+.bcpo-num{display:inline-block;white-space:nowrap;transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .22s ease}
+.bcpo-num.enter{transform:translateY(100%);opacity:0}
+.bcpo-num.enter.active{transform:translateY(0);opacity:1}
+.bcpo-num.exit{position:absolute;left:0;top:0;transform:translateY(0);opacity:1}
+.bcpo-num.exit.active{transform:translateY(-100%);opacity:0}
+.bcpo-num.current{transform:translateY(0);opacity:1}
+
+@media (prefers-reduced-motion:reduce){
+  .bcpo-num{transition:none}
 }

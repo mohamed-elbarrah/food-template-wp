@@ -41,6 +41,16 @@ $price     = $product->get_price_html();
                 </div>
             </div>
 
+            <div class="card-footer">
+            <div class="price-rating-row">
+                <span class="price"><?php echo wc_price( wc_get_price_to_display( $product ) ); ?></span>
+
+                <div class="rating">
+                    <span class="rating-value"><?php echo number_format( (float) $product->get_average_rating(), 1 ); ?></span>
+                    <span class="star">★</span>
+                </div>
+            </div>
+
             <?php if ( $product->is_type( 'simple' ) ) : ?>
                 <a href="<?php echo esc_url( $product->add_to_cart_url() ); ?>" class="add-btn add_to_cart_button full-width-btn"><?php esc_html_e( 'اطلب الحين', 'blocksy-child' ); ?></a>
             <?php else : ?>

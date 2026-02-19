@@ -4,7 +4,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 function bcpo_allowed_field_types() {
-    return array( 'radio', 'checkbox', 'select', 'text' );
+    // For now only single-choice (radio) and multi-choice (checkbox) are allowed
+    return array( 'radio', 'checkbox' );
 }
 
 function bcpo_get_saved_options( $post_id ) {
@@ -24,7 +25,7 @@ function bcpo_sanitize_options_array( $input ) {
     foreach ( $input as $group ) {
         $g = array();
         $g['title'] = isset( $group['title'] ) ? sanitize_text_field( $group['title'] ) : '';
-        $g['type']  = ( isset( $group['type'] ) && in_array( $group['type'], bcpo_allowed_field_types(), true ) ) ? $group['type'] : 'text';
+        $g['type']  = ( isset( $group['type'] ) && in_array( $group['type'], bcpo_allowed_field_types(), true ) ) ? $group['type'] : 'radio';
         $g['required'] = ! empty( $group['required'] ) ? 1 : 0;
         $g['description'] = isset( $group['description'] ) ? sanitize_textarea_field( $group['description'] ) : '';
         $g['options'] = array();

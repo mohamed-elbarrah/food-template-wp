@@ -14,43 +14,61 @@ function bcpo_render_frontend_options( $product_id ) {
         return;
     }
 
-    echo '<div class="bcpo-frontend">';
+    $product = wc_get_product( $product_id );
+    $base_price = $product ? floatval( $product->get_price() ) : 0;
+    $price_decimals = intval( get_option( 'woocommerce_price_num_decimals', wc_get_price_decimals() ) );
+    $thousand_sep = get_option( 'woocommerce_price_thousand_sep', ',' );
+    $decimal_sep = get_option( 'woocommerce_price_decimal_sep', '.' );
+    $currency_symbol = get_woocommerce_currency_symbol();
+    $currency_pos = get_option( 'woocommerce_currency_pos', 'left' );
+
+    echo '<div class="bcpo-frontend" data-base-price="' . esc_attr( $base_price ) . '" data-price-decimals="' . esc_attr( $price_decimals ) . '" data-price-thousand="' . esc_attr( $thousand_sep ) . '" data-price-decimal="' . esc_attr( $decimal_sep ) . '" data-price-symbol="' . esc_attr( $currency_symbol ) . '" data-price-pos="' . esc_attr( $currency_pos ) . '">';
     foreach ( $groups as $gi => $group ) {
-        $title = isset( $group['title'] ) ? $group['title'] : '';
-        $type  = isset( $group['type'] ) ? $group['type'] : 'text';
+        $title    = isset( $group['title'] ) ? $group['title'] : '';
+        $type     = isset( $group['type'] ) ? $group['type'] : 'text';
         $required = ! empty( $group['required'] );
+
         echo '<fieldset class="bcpo-group-frontend" data-type="' . esc_attr( $type ) . '">';
         echo '<legend class="bcpo-group-title">' . esc_html( $title ) . ( $required ? ' *' : '' ) . '</legend>';
+
         if ( in_array( $type, array( 'radio', 'select', 'checkbox' ), true ) ) {
-            if ( 'select' === $type ) {
-                echo '<select name="bcpo_options[' . esc_attr( $gi ) . ']" class="bcpo-select">';
-                echo '<option value="">' . esc_html__( 'Choose', 'blocksy-child' ) . '</option>';
-            }
+            echo '<div class="food-options-container" data-type="' . esc_attr( $type ) . '">';
             foreach ( $group['options'] as $oi => $opt ) {
                 $label = isset( $opt['label'] ) ? $opt['label'] : '';
                 $price = isset( $opt['price'] ) ? floatval( $opt['price'] ) : 0;
-                if ( 'radio' === $type ) {
-                    printf( '<p><label><input type="radio" name="bcpo_options[%1$s]" value="%2$s"> %3$s</label></p>', esc_attr( $gi ), esc_attr( $oi ), esc_html( $label ) );
-                } elseif ( 'checkbox' === $type ) {
-                    $price_text = ( isset( $opt['price'] ) && floatval( $opt['price'] ) > 0 ) ? wc_price( floatval( $opt['price'] ) ) : esc_html__( 'مجاني', 'blocksy-child' );
-                    // Render checkbox as a button-like label with price
+                $price_text = $price > 0 ? ( '+ ' . wc_price( $price ) ) : esc_html__( 'مجاني', 'blocksy-child' );
+                $price_class = $price > 0 ? '' : ' free';
+
+                if ( 'checkbox' === $type ) {
                     printf(
-                        '<label class="bcpo-multi-btn"><input type="checkbox" name="bcpo_options[%1$s][]" value="%2$s" /><span class="bcpo-btn-label">%3$s</span><span class="bcpo-btn-price">%4$s</span></label>',
+                        '<label class="option-item%4$s" data-price="%7$s"><input type="checkbox" class="bcpo-hidden-input" name="bcpo_options[%1$s][]" value="%2$s" data-price="%7$s" /><span class="option-name">%3$s</span><span class="option-price-badge%5$s">%6$s</span></label>',
                         esc_attr( $gi ),
                         esc_attr( $oi ),
                         esc_html( $label ),
+                        '',
+                        esc_attr( $price_class ),
                         wp_kses_post( $price_text )
+                        , esc_attr( $price )
                     );
-                } else { // select
-                    printf( '<option value="%1$s">%2$s</option>', esc_attr( $oi ), esc_html( $label ) );
+                } else {
+                    // radio / select behave like single-choice pills
+                    printf(
+                        '<label class="option-item" data-price="%7$s"><input type="radio" class="bcpo-hidden-input" name="bcpo_options[%1$s]" value="%2$s" data-price="%7$s" /><span class="option-name">%3$s</span><span class="option-price-badge%5$s">%6$s</span></label>',
+                        esc_attr( $gi ),
+                        esc_attr( $oi ),
+                        esc_html( $label ),
+                        '',
+                        esc_attr( $price_class ),
+                        wp_kses_post( $price_text )
+                        , esc_attr( $price )
+                    );
                 }
             }
-            if ( 'select' === $type ) {
-                echo '</select>';
-            }
+            echo '</div>';
         } else { // text
             printf( '<p><input type="text" name="bcpo_options_text[%1$s]" class="bcpo-text" placeholder="%2$s"></p>', esc_attr( $gi ), esc_attr__( 'Enter text', 'blocksy-child' ) );
         }
+
         echo '</fieldset>';
     }
     echo '</div>';

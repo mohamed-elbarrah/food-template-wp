@@ -52,4 +52,10 @@ add_action( 'wp_enqueue_scripts', function() {
     }
     $base = get_stylesheet_directory_uri() . '/inc/product-options/assets';
     wp_enqueue_style( 'bcpo-frontend', $base . '/frontend.css', array(), '1.0' );
+    wp_enqueue_script( 'bcpo-frontend', $base . '/frontend.js', array( 'jquery' ), '1.0', true );
+    // expose AJAX endpoint and nonce to frontend script
+    wp_localize_script( 'bcpo-frontend', 'bcpo_frontend', array(
+        'ajax_url' => admin_url( 'admin-ajax.php' ),
+        'nonce'    => wp_create_nonce( 'bcpo-rate' ),
+    ) );
 } );
