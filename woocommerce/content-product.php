@@ -32,14 +32,7 @@ $price     = $product->get_price_html();
         <p class="ingredients"><?php echo $excerpt; ?></p>
 
         <div class="card-footer">
-            <div class="price-rating-row">
-                <span class="price"><?php echo wc_price( wc_get_price_to_display( $product ) ); ?></span>
-
-                <div class="rating">
-                    <span class="rating-value"><?php echo number_format( (float) $product->get_average_rating(), 1 ); ?></span>
-                    <span class="star">★</span>
-                </div>
-            </div>
+            
 
             <div class="card-footer">
             <div class="price-rating-row">

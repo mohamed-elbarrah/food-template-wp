@@ -105,6 +105,119 @@ function blocksy_child_food_products_shortcode( $atts ) {
 }
 add_shortcode( 'food_products', 'blocksy_child_food_products_shortcode' );
 
+/**
+ * Shortcode: category_cards
+ * Render product categories as horizontally scrollable cards matching supplied design.
+ * Usage: [category_cards limit="6" parent="0"]
+ */
+function blocksy_child_category_cards_shortcode( $atts ) {
+	$atts = shortcode_atts( array(
+		'limit'  => 6,
+		'parent' => 0,
+	), $atts, 'category_cards' );
+
+	$args = array(
+		'taxonomy'   => 'product_cat',
+		'hide_empty' => false,
+		'parent'     => intval( $atts['parent'] ),
+		'orderby'    => 'menu_order',
+		'number'     => intval( $atts['limit'] ),
+	);
+
+	$terms = get_terms( $args );
+	if ( is_wp_error( $terms ) || empty( $terms ) ) {
+		return '<p class="no-cats">' . esc_html__( 'لا توجد فئات', 'blocksy-child' ) . '</p>';
+	}
+
+	$out  = '<div class="bcpo-cat-cards-wrap">';
+	$out .= '<div class="bcpo-cat-viewport">';
+	$out .= '<div class="bcpo-cat-track">';
+
+	foreach ( $terms as $term ) {
+		$thumb_id = get_term_meta( $term->term_id, 'thumbnail_id', true );
+		$img_url = $thumb_id ? esc_url( wp_get_attachment_image_url( $thumb_id, 'medium' ) ) : esc_url( wc_placeholder_img_src( 'medium' ) );
+		$link = esc_url( get_term_link( $term ) );
+		$name = esc_html( $term->name );
+
+		$out .= '<a class="bcpo-cat-card" href="' . $link . '" aria-label="' . $name . '" style="background-image:url(' . $img_url . ')">';
+		$out .= '<span class="bcpo-cat-label">' . $name . '</span>';
+		$out .= '</a>';
+	}
+
+	$out .= '</div>'; // .bcpo-cat-track
+	$out .= '</div>'; // .bcpo-cat-viewport
+	$out .= '</div>'; // .bcpo-cat-cards-wrap
+
+	// Use Swiper.js for smooth, accessible sliding instead of custom drag code.
+	// Enqueue Swiper assets (CDN). These will be printed by WP in header/footer.
+	wp_enqueue_style( 'bcpo-swiper', 'https://unpkg.com/swiper/swiper-bundle.min.css', array(), null );
+	wp_enqueue_script( 'bcpo-swiper', 'https://unpkg.com/swiper/swiper-bundle.min.js', array(), null, true );
+
+	// Wrap the previously-built track in Swiper structure.
+	// NOTE: we already built the slides above; but to keep changes minimal we will
+	// generate a unique container id and reconstruct the HTML here.
+
+	// Generate a unique ID for this instance so multiple shortcodes can coexist.
+	$bcpo_id = 'bcpo-cat-swiper-' . uniqid();
+
+	// Recreate the markup using Swiper classes. We'll re-query terms to keep code simple.
+	$terms = get_terms( $args );
+	if ( ! is_wp_error( $terms ) && ! empty( $terms ) ) {
+		$out  = '<div class="bcpo-cat-cards-wrap">';
+		$out .= '<div id="' . esc_attr( $bcpo_id ) . '" class="bcpo-cat-swiper swiper">';
+		$out .= '<div class="swiper-wrapper">';
+
+		foreach ( $terms as $term ) {
+			$thumb_id = get_term_meta( $term->term_id, 'thumbnail_id', true );
+			$img_url = $thumb_id ? esc_url( wp_get_attachment_image_url( $thumb_id, 'medium' ) ) : esc_url( wc_placeholder_img_src( 'medium' ) );
+			$link = esc_url( get_term_link( $term ) );
+			$name = esc_html( $term->name );
+
+			$out .= '<div class="swiper-slide">';
+			$out .= '<a class="bcpo-cat-card" href="' . $link . '" aria-label="' . $name . '" style="background-image:url(' . $img_url . ')">';
+			$out .= '<span class="bcpo-cat-label">' . $name . '</span>';
+			$out .= '</a>';
+			$out .= '</div>';
+		}
+
+		$out .= '</div>'; // .swiper-wrapper
+		$out .= '</div>'; // .bcpo-cat-swiper
+		$out .= '</div>'; // .bcpo-cat-cards-wrap
+	} else {
+		// fallback (shouldn't happen since we checked earlier)
+		$out = '<p class="no-cats">' . esc_html__( 'لا توجد فئات', 'blocksy-child' ) . '</p>';
+	}
+
+	// Minimal styles for the cards (keeps original visual design, but uses Swiper layout)
+	$out .= '<style>' . "\n";
+	// Instance-scoped styles
+	$out .= '#' . esc_attr( $bcpo_id ) . ' .bcpo-cat-cards-wrap{ margin:18px 0; }' . "\n";
+	$out .= '#' . esc_attr( $bcpo_id ) . ' .bcpo-cat-swiper{ padding-bottom:6px; }' . "\n";
+	$out .= '#' . esc_attr( $bcpo_id ) . ' .swiper-wrapper{ display:flex; align-items:stretch; }' . "\n";
+	// Force slides to size to their content (override Swiper default width:100%)
+	$out .= '#' . esc_attr( $bcpo_id ) . ' .swiper-slide{ width:auto !important; flex:0 0 auto; display:block; height:100%; position:relative; transition-property:transform; }' . "\n";
+	$out .= '#' . esc_attr( $bcpo_id ) . ' .bcpo-cat-card{ display:block; min-width:260px; width:260px; height:140px; background-size:cover; background-position:center; border-radius:12px; box-shadow:0 10px 26px rgba(19,21,30,0.06); position:relative; text-decoration:none; color:#fff; }' . "\n";
+	$out .= '#' . esc_attr( $bcpo_id ) . ' .bcpo-cat-label{ position:absolute; left:12px; bottom:12px; background:linear-gradient(90deg, rgba(0,0,0,0.45), rgba(0,0,0,0.18)); padding:6px 10px; border-radius:8px; font-weight:700; font-size:0.95rem; }' . "\n";
+	$out .= '@media (max-width:900px){ #' . esc_attr( $bcpo_id ) . ' .bcpo-cat-card{ min-width:220px; width:220px; height:120px } }' . "\n";
+
+	// Global gradient fade/mask effect applied to the container class
+	$out .= '.bcpo-cat-cards-wrap{ position:relative; }' . "\n";
+	$out .= '.bcpo-cat-cards-wrap .bcpo-cat-viewport{ -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%); mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%); }' . "\n";
+	$out .= '.bcpo-cat-cards-wrap::before, .bcpo-cat-cards-wrap::after{ content:""; position:absolute; top:0; bottom:0; width:72px; pointer-events:none; z-index:5; }' . "\n";
+	$out .= '.bcpo-cat-cards-wrap::before{ left:0; background:linear-gradient(90deg, var(--bg-light, #ffffff) 0%, rgba(255,255,255,0) 100%); }' . "\n";
+	$out .= '.bcpo-cat-cards-wrap::after{ right:0; background:linear-gradient(270deg, var(--bg-light, #ffffff) 0%, rgba(255,255,255,0) 100%); }' . "\n";
+
+	$out .= '</style>';
+
+	// Initialize Swiper for this instance. Use wp_add_inline_script so the init
+	// runs after the Swiper bundle is printed (footer-safe).
+	$init_js = "(function(){ if (typeof Swiper === 'undefined') return; new Swiper('#" . esc_js( $bcpo_id ) . "', { slidesPerView: 'auto', spaceBetween: 14, freeMode: true, freeModeMomentum: true, grabCursor: true, watchOverflow: true }); })();";
+	wp_add_inline_script( 'bcpo-swiper', $init_js );
+
+	return $out;
+}
+add_shortcode( 'category_cards', 'blocksy_child_category_cards_shortcode' );
+
 /* Make shortcode available in Elementor's Shortcode widget (it's global) */
 
 /**

@@ -164,6 +164,97 @@ if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
 </div>
     </div>
 
+<!-- Product reviews carousel: show product reviews as cards and autoplay loop if more than 3 -->
+<?php
+$comments = get_comments( array(
+  'post_id' => $product->get_id(),
+  'status'  => 'approve',
+  'meta_key'=> 'rating',
+  'order'   => 'DESC',
+) );
+if ( ! empty( $comments ) ) :
+  $count = count( $comments );
+?>
+  <div class="bcpo-reviews-wrap single-product-container" aria-label="Product reviews">
+    <h3 class="bcpo-reviews-heading" style="margin-bottom:12px;"><?php echo esc_html__( 'تقييمات المستخدمين', 'blocksy-child' ); ?></h3>
+    <div class="bcpo-reviews-viewport" style="overflow:hidden;">
+      <div class="bcpo-reviews-track">
+        <?php foreach ( $comments as $c ) :
+          $rating = intval( get_comment_meta( $c->comment_ID, 'rating', true ) );
+          $author = get_comment_author( $c );
+          $text = wp_trim_words( wp_strip_all_tags( $c->comment_content ), 30, '...' );
+        ?>
+          <article class="bcpo-review-card" role="article" aria-label="Review by <?php echo esc_attr( $author ); ?>">
+            <div class="bcpo-review-stars">
+              <?php for ( $s = 1; $s <= 5; $s++ ) : ?>
+                <span class="bcpo-star<?php echo ( $s <= $rating ) ? ' filled' : ''; ?>">★</span>
+              <?php endfor; ?>
+            </div>
+            <blockquote class="bcpo-review-quote"><?php echo esc_html( $text ); ?></blockquote>
+            <div class="bcpo-review-meta">
+              <div class="bcpo-review-author">
+                <img class="bcpo-g2" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24'><circle cx='12' cy='12' r='12' fill='%23ff4b2b'/></svg>" alt="G2"> 
+                <span class="bcpo-author-name"><?php echo esc_html( $author ); ?></span>
+              </div>
+            </div>
+          </article>
+        <?php endforeach; ?>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .bcpo-reviews-wrap { margin-top:18px; }
+    .bcpo-reviews-heading { font-size:1.05rem; color:#222; }
+    .bcpo-reviews-viewport { position:relative; }
+    .bcpo-reviews-track { display:flex; gap:18px; align-items:stretch; padding-bottom:8px; }
+    .bcpo-review-card { background:#fff; border-radius:12px; box-shadow:0 12px 30px rgba(19,21,30,0.06); padding:18px; width:320px; flex:0 0 320px; color:#24303a; }
+    .bcpo-review-stars { color:#f6c84c; font-size:1.05rem; margin-bottom:8px; }
+    .bcpo-review-stars .filled { color:#f6c84c; }
+    .bcpo-review-quote { font-style:normal; color:#2b2b2b; font-weight:600; margin:0 0 14px 0; }
+    .bcpo-review-meta { display:flex; align-items:center; justify-content:flex-start; }
+    .bcpo-review-author { display:flex; align-items:center; gap:10px; color:#556; font-weight:600; }
+    .bcpo-review-author .bcpo-g2 { width:28px; height:28px; border-radius:50%; }
+    @media (max-width:900px){ .bcpo-review-card{ width:260px; flex:0 0 260px } }
+  </style>
+
+  <script>
+    (function(){
+      var track = document.querySelector('.bcpo-reviews-track');
+      if (!track) return;
+      var viewport = track.parentElement;
+      var items = track.children.length;
+      // If more than 3 items, enable continuous loop by cloning items
+      if (items > 3) {
+        // duplicate items to make seamless loop
+        track.innerHTML = track.innerHTML + track.innerHTML;
+        var speed = 0.5; // pixels per frame-ish
+        var rafId;
+        function step(){
+          viewport.scrollLeft += speed;
+          if ( viewport.scrollLeft >= (track.scrollWidth / 2) ) {
+            viewport.scrollLeft = 0;
+          }
+          rafId = requestAnimationFrame(step);
+        }
+        // pause on hover
+        viewport.addEventListener('mouseenter', function(){ cancelAnimationFrame(rafId); });
+        viewport.addEventListener('mouseleave', function(){ rafId = requestAnimationFrame(step); });
+        // start
+        rafId = requestAnimationFrame(step);
+      } else {
+        // center if few items
+        viewport.style.display = 'flex';
+        viewport.style.justifyContent = 'center';
+      }
+    })();
+  </script>
+
+<?php
+endif;
+
+?>
+
 <!-- Fallback JS: if the frontend script isn't loaded, handle rating form submit via fetch -->
 <script>
   (function(){
