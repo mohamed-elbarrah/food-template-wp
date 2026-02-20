@@ -296,10 +296,14 @@
 
 	/* Rating form layout under product layout */
 	.bcpo-rating-section { margin:18px 0; }
-	.bcpo-rating-grid { display:flex; gap:24px; align-items:flex-start; }
+	.bcpo-rating-grid { gap:24px; align-items:flex-start; background-color: #fff6e5;
+  padding: 8px;
+  border-radius: 12px; }
 	.bcpo-rating-left { flex:1 1 60%; }
 	.bcpo-rating-right { flex:0 0 260px; text-align:right; }
-	.bcpo-comment { width:100%; min-height:84px; border:1px solid var(--muted-border); padding:8px; border-radius:6px; resize:vertical; }
+	.bcpo-comment { width:100%; min-height:84px; border:1px solid var(--muted-border); padding:8px; border-radius:6px; resize:vertical;  background-color: white;
+  border-radius: 10px;
+  max-width: 350px; }
 	.bcpo-rating-label { display:block; text-align:right; margin-bottom:8px; color:var(--text-dark); font-weight:700; }
 	.bcpo-rating-submit { margin-top:10px; background:var(--primary-orange); color:#fff; border-radius:8px; padding:8px 14px; }
 

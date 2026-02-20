@@ -19,6 +19,7 @@ if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
       <div class="single-excerpt"><?php echo wp_kses_post( wpautop( $short ) ); ?></div>
     <?php endif; ?>
 
+    <style>body{margin-bottom:100px!important;}</style>
     <?php
     /**
      * Render product options from BCPO above the card footer so they appear
@@ -140,13 +141,6 @@ if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
   <?php else : ?>
     <form class="bcpo-rating-form" method="post" action="#">
       <div class="bcpo-rating-grid">
-        <div class="bcpo-rating-left">
-          <label class="bcpo-rating-label">أخبرنا عن رأيك في هذه الخدمة</label>
-          <textarea name="bcpo_comment" class="bcpo-comment" placeholder="النص المدخل" rows="4"></textarea>
-          <div class="bcpo-rating-actions">
-            <button type="submit" class="bcpo-rating-submit add-btn">إرسال</button>
-          </div>
-        </div>
 
         <div class="bcpo-rating-right">
           <div class="bcpo-rating-prompt">كيف تقييم هذه الخدمة؟</div>
@@ -156,6 +150,15 @@ if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
             <?php endfor; ?>
           </div>
         </div>
+
+        <div class="bcpo-rating-left">
+          <label class="bcpo-rating-label">أخبرنا عن رأيك في هذه الخدمة</label>
+          <textarea name="bcpo_comment" class="bcpo-comment" placeholder="النص المدخل" rows="4"></textarea>
+          <div class="bcpo-rating-actions">
+            <button type="submit" class="bcpo-rating-submit add-btn">إرسال</button>
+          </div>
+        </div>
+
       </div>
       <input type="hidden" name="product_id" value="<?php echo esc_attr( $product->get_id() ); ?>">
       <input type="hidden" name="rating" value="">
