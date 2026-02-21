@@ -99,6 +99,94 @@
       updateDisplayedPrice( this );
     });
 
+    // Client-side validation: ensure required groups have selection before add-to-cart
+    // Expose validator so other scripts (AJAX add-to-cart) can call it.
+    window.bcpoValidateForm = function(form){
+      var $form = $(form);
+      var $scope = $form.closest('.single-left, .product-card, .product');
+      if (!$scope || $scope.length === 0) $scope = $form.closest('body');
+      // remove any previous inline errors
+      $scope.find('.bcpo-inline-error').remove();
+
+      var invalid = null;
+      $scope.find('.bcpo-group-frontend[data-required="1"]').each(function(){
+        if (invalid) return; // stop after first invalid
+        var $fs = $(this);
+        var type = $fs.data('type') || '';
+        if (type === 'text'){
+          var $input = $fs.find('input.bcpo-text');
+          var val = $input.val() ? $input.val().trim() : '';
+          if (val === '') invalid = { el: $input.get(0) || $fs.get(0), title: $fs.find('.bcpo-group-title').text() };
+        } else {
+          var $checked = $fs.find('input.bcpo-hidden-input:checked');
+          if (!$checked.length) invalid = { el: $fs.find('.option-item').get(0) || $fs.get(0), title: $fs.find('.bcpo-group-title').text() };
+        }
+      });
+
+      if (invalid){
+        var title = (invalid.title || '').replace(/\*\s*$/, '').trim();
+        var msg = title ? ( 'الرجاء اختيار: ' + title ) : 'الرجاء اختيار الخيار المطلوب.';
+        var $ins = $( '<div class="bcpo-inline-error" role="alert" style="color:#b00020;margin:6px 0;font-weight:600;">' + msg + '</div>' );
+        var $target = $( invalid.el );
+        // If target is an input, insert after it; otherwise insert before the fieldset legend
+        if ($target.is('input,textarea,select')){
+          $target.first().focus();
+          $target.first().closest('.option-item').addClass('bcpo-invalid');
+          $target.first().after($ins);
+        } else {
+          var $fs = $target.closest('.bcpo-group-frontend');
+          if ($fs.length) {
+            $fs.find('.bcpo-group-title').first().after($ins);
+            // focus first interactive element in this group
+            var $focusEl = $fs.find('input.bcpo-hidden-input, input.bcpo-text').first();
+            if ($focusEl && $focusEl.length) { $focusEl.get(0).focus(); }
+          } else {
+            $target.before($ins);
+            try{ $target.get(0).focus(); }catch(e){}
+          }
+        }
+        // scroll into view smoothly
+        try{ $ins.get(0).scrollIntoView({ behavior: 'smooth', block: 'center' }); }catch(e){}
+        // remove after a few seconds
+        setTimeout(function(){ $ins.fadeOut(200, function(){ $(this).remove(); }); }, 4000);
+        return { valid: false, message: msg, el: invalid.el };
+      }
+      return { valid: true };
+    };
+
+    // Before submit: validate and copy bcpo inputs into the form so they are posted
+    function bcpo_copy_inputs_into_form(form){
+      var $form = $(form);
+      // remove previously appended markers
+      $form.find('input[data-bcpo-clone], textarea[data-bcpo-clone]').remove();
+      var $scope = $form.closest('.single-left, .product-card, .product');
+      if (!$scope || $scope.length === 0) $scope = $form.closest('body');
+      // find any named inputs inside the bcpo frontend for this product
+      $scope.find('.bcpo-frontend').find('input[name], textarea[name], select[name]').each(function(){
+        var $el = $(this);
+        var name = $el.attr('name');
+        if (!name) return;
+        var type = ($el.attr('type') || '').toLowerCase();
+        if ((type === 'radio' || type === 'checkbox')){
+          if (!$el.prop('checked')) return; // only append checked
+        }
+        // append a cloned hidden input into the form to ensure it's submitted
+        var val = $el.val();
+        var $clone = $('<input>').attr('type','hidden').attr('name', name).val( val === undefined || val === null ? '' : val ).attr('data-bcpo-clone','1');
+        $form.append( $clone );
+        try{ console.debug('[bcpo] clone into form', name, val); }catch(e){}
+      });
+      // Do NOT append empty markers for radio/checkbox groups here — leave them absent so server validation treats them as missing when appropriate.
+    }
+
+    $(document).on('submit', '.custom-single-add-to-cart', function(e){
+      var res = window.bcpoValidateForm(this);
+      if (!res.valid){ e.preventDefault(); return false; }
+      // copy bcpo inputs so server receives them even if the markup is outside the form
+      try{ bcpo_copy_inputs_into_form(this); }catch(err){ /* ignore */ }
+      return true;
+    });
+
     function updateDisplayedPrice( context ){
       // determine scope from context element or default to body
       var $ctx = context ? $(context) : $();

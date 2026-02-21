@@ -110,7 +110,66 @@
             try{ var overlay = document.querySelector('.bcpo-features-overlay.bcpo-show'); if(overlay){ overlay.classList.remove('bcpo-show'); document.body.style.overflow = ''; } }catch(e){}
             if(btn.getAttribute('data-bcpo-handled')) return;
             e.preventDefault(); btn.setAttribute('data-bcpo-handled', '1');
+            // run client-side validation if available; abort if invalid
+            try{
+                if (typeof window.bcpoValidateForm === 'function'){
+                    var _res = window.bcpoValidateForm(form);
+                    if (!_res || !_res.valid){ btn.removeAttribute('data-bcpo-handled'); return; }
+                }
+            }catch(e){ /* ignore validation errors and continue */ }
             var fd = new FormData(form);
+            // ensure bcpo option groups (possibly rendered outside the form) are serialized
+            try{
+                var scope = btn.closest('.single-left, .product-card, .product');
+                if(!scope) scope = document;
+                var groups = (scope.querySelectorAll ? scope.querySelectorAll('.bcpo-group-frontend') : []);
+                if(groups && groups.length){
+                    Array.prototype.forEach.call(groups, function(g){
+                        try{
+                            var $g = g; // DOM element
+                            var type = $g.getAttribute('data-type') || 'radio';
+                            // determine group index from existing input name pattern
+                            var firstInput = $g.querySelector('input[name], textarea[name], select[name]');
+                            if(!firstInput) return;
+                            var name = firstInput.getAttribute('name');
+                            if(!name) return;
+                            // extract group's key portion like bcpo_options[0] or bcpo_options_text[0]
+                            // we'll build appropriate names for append
+                            // For text inputs use the exact name (e.g., bcpo_options_text[0])
+                            if(type === 'text'){
+                                var txt = $g.querySelector('input.bcpo-text');
+                                var val = txt ? (txt.value || '') : '';
+                                fd.append(name, val);
+                                try{ console.debug('[bcpo] append', name, val); }catch(e){}
+                            } else if(type === 'checkbox'){
+                                // checkbox inputs have names like bcpo_options[0][]
+                                var inputs = $g.querySelectorAll('input.bcpo-hidden-input[type="checkbox"][name]');
+                                var any = false;
+                                Array.prototype.forEach.call(inputs, function(i){ if(i.checked){ fd.append(i.getAttribute('name'), i.value || ''); any = true; try{ console.debug('[bcpo] append', i.getAttribute('name'), i.value || ''); }catch(e){} } });
+                                if(!any){
+                                    // do NOT append an empty array marker for checkboxes when none selected
+                                    // (keep POST absent so server treats as missing for required validation)
+                                    try{ console.debug('[bcpo] no checkbox selected for group', name); }catch(e){}
+                                }
+                            } else {
+                                // radio / single choice. name like bcpo_options[0]
+                                var checked = $g.querySelector('input.bcpo-hidden-input[type="radio"]:checked');
+                                if(checked){ fd.append(checked.getAttribute('name'), checked.value || ''); try{ console.debug('[bcpo] append', checked.getAttribute('name'), checked.value || ''); }catch(e){} }
+                                else {
+                                    // do NOT append empty marker for radios when none selected to avoid false-positive arrays
+                                    try{ console.debug('[bcpo] no radio selected for group', name); }catch(e){}
+                                }
+                            }
+                        }catch(e){}
+                    });
+                }
+            }catch(e){ /* ignore */ }
+            // DEBUG: dump FormData content (useful in browser devtools)
+            try{
+                if (typeof console !== 'undefined' && typeof fd.entries === 'function'){
+                    for(var pair of fd.entries()){ console.debug('[bcpo] formdata', pair[0], pair[1]); }
+                }
+            }catch(e){}
             var ajaxUrl = '';
             if(typeof wc_add_to_cart_params !== 'undefined' && wc_add_to_cart_params.wc_ajax_url){ ajaxUrl = wc_add_to_cart_params.wc_ajax_url.replace('%%endpoint%%','add_to_cart'); }
             else { ajaxUrl = window.location.origin + window.location.pathname + '?wc-ajax=add_to_cart'; }

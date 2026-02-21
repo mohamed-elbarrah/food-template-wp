@@ -28,7 +28,9 @@ function bcpo_render_frontend_options( $product_id ) {
         $type     = isset( $group['type'] ) ? $group['type'] : 'text';
         $required = ! empty( $group['required'] );
 
-        echo '<fieldset class="bcpo-group-frontend" data-type="' . esc_attr( $type ) . '">';
+        // expose whether the group is required to the frontend via data-required
+        $req_attr = $required ? ' data-required="1"' : '';
+        echo '<fieldset class="bcpo-group-frontend" data-type="' . esc_attr( $type ) . '"' . $req_attr . '>';
         echo '<legend class="bcpo-group-title">' . esc_html( $title ) . ( $required ? ' *' : '' ) . '</legend>';
 
         if ( in_array( $type, array( 'radio', 'select', 'checkbox' ), true ) ) {
@@ -95,10 +97,24 @@ function bcpo_validate_add_to_cart( $passed, $product_id, $quantity ) {
                 return false;
             }
         } else {
-            $val = isset( $_POST['bcpo_options'][ $gi ] ) ? wp_unslash( $_POST['bcpo_options'][ $gi ] ) : '';
-            if ( empty( $val ) ) {
-                wc_add_notice( sprintf( __( 'Please choose required option: %s', 'blocksy-child' ), $group['title'] ), 'error' );
-                return false;
+            // support radio (single string) and checkbox (array). Be careful: PHP considers the string '0' empty,
+            // so test explicitly for empty string/null rather than using empty() which rejects valid '0' values.
+            if ( isset( $_POST['bcpo_options'][ $gi ] ) ) {
+                $val = wp_unslash( $_POST['bcpo_options'][ $gi ] );
+            } else {
+                $val = null;
+            }
+            if ( is_array( $val ) ) {
+                if ( count( $val ) === 0 ) {
+                    wc_add_notice( sprintf( __( 'Please choose required option: %s', 'blocksy-child' ), $group['title'] ), 'error' );
+                    return false;
+                }
+            } else {
+                // treat null or empty string as not provided; accept '0' as valid selection
+                if ( $val === null || $val === '' ) {
+                    wc_add_notice( sprintf( __( 'Please choose required option: %s', 'blocksy-child' ), $group['title'] ), 'error' );
+                    return false;
+                }
             }
         }
     }
@@ -119,12 +135,17 @@ function bcpo_add_cart_item_data( $cart_item_meta, $product_id, $variation_id ) 
         $type = isset( $group['type'] ) ? $group['type'] : 'text';
         if ( 'text' === $type ) {
             $val = isset( $_POST['bcpo_options_text'][ $gi ] ) ? sanitize_text_field( wp_unslash( $_POST['bcpo_options_text'][ $gi ] ) ) : '';
-            if ( '' !== $val ) {
-                $selected[ $gi ] = array( 'type' => 'text', 'value' => $val );
-            }
+            // always include text groups so cart/checkout can display a placeholder when empty
+            $selected[ $gi ] = array( 'type' => 'text', 'value' => $val );
         } else {
             $posted = isset( $_POST['bcpo_options'][ $gi ] ) ? wp_unslash( $_POST['bcpo_options'][ $gi ] ) : '';
+            // if nothing posted for this group, record an empty marker so cart shows "لا شيء"
             if ( $posted === '' ) {
+                if ( 'checkbox' === $type ) {
+                    $selected[ $gi ] = array( 'type' => 'checkbox', 'values' => array() );
+                } else {
+                    $selected[ $gi ] = array( 'type' => $type, 'value' => null );
+                }
                 continue;
             }
             if ( is_array( $posted ) ) {
@@ -140,6 +161,11 @@ function bcpo_add_cart_item_data( $cart_item_meta, $product_id, $variation_id ) 
                 }
                 if ( ! empty( $vals ) ) {
                     $selected[ $gi ] = array( 'type' => 'checkbox', 'values' => $vals );
+                } else {
+                    // keep empty checkbox group marker
+                    if ( ! isset( $selected[ $gi ] ) ) {
+                        $selected[ $gi ] = array( 'type' => 'checkbox', 'values' => array() );
+                    }
                 }
             } else {
                 $oi = intval( $posted );
@@ -147,18 +173,21 @@ function bcpo_add_cart_item_data( $cart_item_meta, $product_id, $variation_id ) 
                     $opt = $group['options'][ $oi ];
                     $selected[ $gi ] = array( 'type' => $type, 'value' => array( 'label' => $opt['label'], 'price' => floatval( $opt['price'] ) ) );
                     $extra += floatval( $opt['price'] );
+                } else {
+                    // posted value didn't match an option - record as null so cart shows "لا شيء"
+                    if ( ! isset( $selected[ $gi ] ) ) {
+                        $selected[ $gi ] = array( 'type' => $type, 'value' => null );
+                    }
                 }
             }
         }
     }
-
-    if ( ! empty( $selected ) ) {
-        $cart_item_meta['bcpo_options'] = $selected;
-        $product = wc_get_product( $product_id );
-        $cart_item_meta['bcpo_base_price'] = $product ? floatval( $product->get_price() ) : 0;
-        $cart_item_meta['bcpo_extra'] = round( $extra, 2 );
-        $cart_item_meta['unique_key'] = md5( microtime() . rand() );
-    }
+    // always attach options meta (may contain empty markers) so cart/checkout can render every group
+    $cart_item_meta['bcpo_options'] = $selected;
+    $product = wc_get_product( $product_id );
+    $cart_item_meta['bcpo_base_price'] = $product ? floatval( $product->get_price() ) : 0;
+    $cart_item_meta['bcpo_extra'] = round( $extra, 2 );
+    $cart_item_meta['unique_key'] = md5( microtime() . rand() );
 
     return $cart_item_meta;
 }
@@ -174,25 +203,47 @@ function bcpo_before_calculate_totals( $cart ) {
             continue;
         }
         $base = isset( $cart_item['bcpo_base_price'] ) ? floatval( $cart_item['bcpo_base_price'] ) : floatval( $cart_item['data']->get_price() );
-        $new = $base + floatval( $cart_item['bcpo_extra'] );
-        $cart_item['data']->set_price( $new );
-    }
-}
+            if ( empty( $cart_item['bcpo_options'] ) ) {
+                return $item_data;
+            }
 
-// Show selected options in cart and mini-cart
-add_filter( 'woocommerce_get_item_data', 'bcpo_get_item_data', 10, 2 );
-function bcpo_get_item_data( $item_data, $cart_item ) {
-    if ( empty( $cart_item['bcpo_options'] ) ) {
-        return $item_data;
-    }
-    foreach ( $cart_item['bcpo_options'] as $gi => $info ) {
+            // attempt to retrieve group titles so cart displays meaningful keys
+            $product_id = 0;
+            if ( isset( $cart_item['product_id'] ) ) {
+                $product_id = intval( $cart_item['product_id'] );
+            } elseif ( isset( $cart_item['data'] ) && is_object( $cart_item['data'] ) ) {
+                try { $product_id = intval( $cart_item['data']->get_id() ); } catch ( Exception $e ) { $product_id = 0; }
+            }
+            $groups = $product_id ? ( function_exists( 'bcpo_get_saved_options' ) ? bcpo_get_saved_options( $product_id ) : array() ) : array();
+
+            foreach ( $cart_item['bcpo_options'] as $gi => $info ) {
+                $title = isset( $groups[ $gi ]['title'] ) ? sanitize_text_field( $groups[ $gi ]['title'] ) : '';
+                if ( 'text' === $info['type'] ) {
+                    $val = isset( $info['value'] ) ? sanitize_text_field( $info['value'] ) : '';
+                    $item_data[] = array( 'key' => $title, 'name' => $title, 'value' => $val );
+                } elseif ( 'checkbox' === $info['type'] ) {
+                    $vals = array();
+                    if ( ! empty( $info['values'] ) && is_array( $info['values'] ) ) {
+                        $vals = array_map( function( $v ) { return sanitize_text_field( $v['label'] ); }, $info['values'] );
+                    }
+                    $item_data[] = array( 'key' => $title, 'name' => $title, 'value' => ( empty( $vals ) ? 'لا شيء' : implode( ', ', $vals ) ) );
+                } else {
+                    $label = isset( $info['value']['label'] ) ? sanitize_text_field( $info['value']['label'] ) : '';
+                    $item_data[] = array( 'key' => $title, 'name' => $title, 'value' => ( $label === '' ? 'لا شيء' : $label ) );
+                }
+            }
         if ( 'text' === $info['type'] ) {
-            $item_data[] = array( 'key' => '', 'value' => sanitize_text_field( $info['value'] ) );
+            $val = isset( $info['value'] ) ? sanitize_text_field( $info['value'] ) : '';
+            $item_data[] = array( 'key' => '', 'value' => ( $val === '' ? 'لا شيء' : $val ) );
         } elseif ( 'checkbox' === $info['type'] ) {
-            $vals = array_map( function( $v ) { return sanitize_text_field( $v['label'] ); }, $info['values'] );
-            $item_data[] = array( 'key' => '', 'value' => implode( ', ', $vals ) );
+            $vals = array();
+            if ( ! empty( $info['values'] ) && is_array( $info['values'] ) ) {
+                $vals = array_map( function( $v ) { return sanitize_text_field( $v['label'] ); }, $info['values'] );
+            }
+            $item_data[] = array( 'key' => '', 'value' => ( empty( $vals ) ? 'لا شيء' : implode( ', ', $vals ) ) );
         } else {
-            $item_data[] = array( 'key' => '', 'value' => sanitize_text_field( $info['value']['label'] ) );
+            $label = isset( $info['value']['label'] ) ? sanitize_text_field( $info['value']['label'] ) : '';
+            $item_data[] = array( 'key' => '', 'value' => ( $label === '' ? 'لا شيء' : $label ) );
         }
     }
     return $item_data;
