@@ -97,6 +97,7 @@
                 var detail = e && e.detail ? e.detail : {};
                 var name = detail.name || '';
                 var title = name ? (name + ' تم إضافته إلى السلة') : 'تم إضافة طلبك إلى السلة بنجاح';
+                try{ var overlay = document.querySelector('.bcpo-features-overlay.bcpo-show'); if(overlay){ overlay.classList.remove('bcpo-show'); document.body.style.overflow = ''; } }catch(e){}
                 cleanupWooInsertions();
                 showToast(title, 'يمكنك المتابعة لإتمام الطلب أو مواصلة التصفح.');
             });
@@ -107,7 +108,6 @@
             if(!btn) return;
             var form = btn.closest('form');
             if(!form) return;
-            try{ var overlay = document.querySelector('.bcpo-features-overlay.bcpo-show'); if(overlay){ overlay.classList.remove('bcpo-show'); document.body.style.overflow = ''; } }catch(e){}
             if(btn.getAttribute('data-bcpo-handled')) return;
             e.preventDefault(); btn.setAttribute('data-bcpo-handled', '1');
             // run client-side validation if available; abort if invalid
@@ -180,11 +180,19 @@
                     var json = null; try{ json = JSON.parse(text); }catch(err){ json = null; }
                     var name = '';
                     try{ var p = btn.closest('.product'); if(p){ var title = p.querySelector('.product_title') || p.querySelector('h1.product_title') || p.querySelector('.woocommerce-loop-product__title'); if(title) name = title.textContent.trim(); } }catch(e){}
-                    try{ if(window.jQuery){ jQuery(document.body).trigger('added_to_cart', [ (json && json.fragments) || {}, (json && json.cart_hash) || '', jQuery(btn) ]); }
-                    else { var ev = new CustomEvent('added_to_cart', { detail: { fragments: (json && json.fragments) || {}, cart_hash: (json && json.cart_hash) || '', button: btn, name: name } }); document.body.dispatchEvent(ev); } }catch(e){}
-                    cleanupWooInsertions();
-                    var titleText = name ? (name + ' تم إضافته إلى السلة') : 'تم إضافة طلبك إلى السلة بنجاح';
-                    showToast(titleText, 'يمكنك المتابعة لإتمام الطلب أو مواصلة التصفح.');
+                    try{
+                        // If the server returned an error flag, keep the modal open and show an error
+                        if ( json && json.error ) {
+                            cleanupWooInsertions();
+                            showToast('حدث خطأ أثناء الإضافة','حاول مرة أخرى');
+                        } else {
+                            if(window.jQuery){ jQuery(document.body).trigger('added_to_cart', [ (json && json.fragments) || {}, (json && json.cart_hash) || '', jQuery(btn) ]); }
+                            else { var ev = new CustomEvent('added_to_cart', { detail: { fragments: (json && json.fragments) || {}, cart_hash: (json && json.cart_hash) || '', button: btn, name: name } }); document.body.dispatchEvent(ev); }
+                            cleanupWooInsertions();
+                            var titleText = name ? (name + ' تم إضافته إلى السلة') : 'تم إضافة طلبك إلى السلة بنجاح';
+                            showToast(titleText, 'يمكنك المتابعة لإتمام الطلب أو مواصلة التصفح.');
+                        }
+                    }catch(e){}
                 })
                 .catch(function(){ showToast('حدث خطأ أثناء الإضافة','حاول مرة أخرى'); })
                 .finally(function(){ setTimeout(function(){ btn.removeAttribute('data-bcpo-handled'); }, 500); });
