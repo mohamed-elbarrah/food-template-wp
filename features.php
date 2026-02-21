@@ -63,6 +63,28 @@ function ensure() {
 }
 function setLoading(show){
     ensure(); var inner = overlay && overlay.querySelector('.bcpo-features-inner'); if(!inner) return; if(show){ inner.innerHTML = '<div class="bcpo-features-loading">تحميل...</div>'; } }
+function initQtyIn(root){
+    if(!root) return;
+    var wrappers = root.querySelectorAll('.qty-wrap');
+    wrappers.forEach(function(w){
+        var dec = w.querySelector('.qty-decrease');
+        var inc = w.querySelector('.qty-increase');
+        var input = w.querySelector('.qty-input');
+        if(!input) return;
+        dec && dec.addEventListener('click', function(){
+            var val = parseInt(input.value) || 1;
+            var min = parseInt(input.getAttribute('min')) || 1;
+            if(val > min) input.value = val - 1;
+            // trigger change event for any listeners
+            var ev = new Event('change', { bubbles: true }); input.dispatchEvent(ev);
+        });
+        inc && inc.addEventListener('click', function(){
+            var val = parseInt(input.value) || 1;
+            input.value = val + 1;
+            var ev = new Event('change', { bubbles: true }); input.dispatchEvent(ev);
+        });
+    });
+}
 function openModalWithProductId( productId ){
     ensure(); if(!overlay) return; overlay.classList.add('bcpo-show'); document.body.style.overflow = 'hidden'; var inner = overlay.querySelector('.bcpo-features-inner'); if(!inner) return;
     // If content already loaded for same product, don't fetch again
@@ -77,6 +99,16 @@ function openModalWithProductId( productId ){
         .then(function(j){
             if ( j && j.success && j.data && j.data.html ) {
                 inner.innerHTML = j.data.html;
+                // initialize qty controls inside inserted content
+                try{ initQtyIn(inner); }catch(e){}
+                // ensure any pre-checked option inputs get active class and trigger change
+                try{
+                    var checked = inner.querySelectorAll('input.bcpo-hidden-input:checked');
+                    checked.forEach(function(inp){
+                        var it = inp.closest('.option-item'); if(it) it.classList.add('active');
+                        inp.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                }catch(e){}
                 inner.dataset.loadedFor = String(productId);
 
                 // lazy-load product-options CSS/JS if not already present

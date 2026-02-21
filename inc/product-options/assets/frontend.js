@@ -1,47 +1,57 @@
 /* bcpo frontend interactions: toggle active class and sync input checked state */
 (function($){
   $(document).ready(function(){
-    // Price formatting config from wrapper data (fallbacks will be used)
-    var $bcpo = $('.bcpo-frontend').first();
-    var bcpoCfg = {
-      basePrice: parseFloat( $bcpo.data('base-price') || 0 ),
-      decimals: parseInt( $bcpo.data('price-decimals') || 2 ),
-      thousand: ( $bcpo.data('price-thousand') || ',' ) + '',
-      decimal: ( $bcpo.data('price-decimal') || '.' ) + '',
-      symbol: ( $bcpo.data('price-symbol') || '' ) + '',
-      pos: ( $bcpo.data('price-pos') || 'left' ) + ''
-    };
+    // Helper: read bcpo config from a given scope (element or jQuery)
+    function readConfigFromScope( el ){
+      var $el = el ? $(el) : $();
+      var $wrap = $el.closest('.single-left, .product-card, .product, body');
+      if ( !$wrap || $wrap.length === 0 ) $wrap = $('body');
+      var $bc = $wrap.find('.bcpo-frontend').first();
+      var cfg = {
+        basePrice: 0,
+        decimals: 2,
+        thousand: ',',
+        decimal: '.',
+        symbol: '',
+        pos: 'left'
+      };
+      if ( $bc && $bc.length ){
+        cfg.basePrice = parseFloat( $bc.data('base-price') || 0 );
+        cfg.decimals  = parseInt( $bc.data('price-decimals') || cfg.decimals );
+        cfg.thousand  = ( $bc.data('price-thousand') || cfg.thousand ) + '';
+        cfg.decimal   = ( $bc.data('price-decimal') || cfg.decimal ) + '';
+        cfg.symbol    = ( $bc.data('price-symbol') || cfg.symbol ) + '';
+        cfg.pos       = ( $bc.data('price-pos') || cfg.pos ) + '';
+      }
+      return { wrap: $wrap, cfg: cfg };
+    }
 
-    function formatPrice( amount ){ 
-      var decimals = isNaN(bcpoCfg.decimals) ? 2 : bcpoCfg.decimals;
-      var thousand = bcpoCfg.thousand || ',';
-      var decimal = bcpoCfg.decimal || '.';
+    // Format price using per-scope config. Accepts optional cfg returned by readConfigFromScope.
+    function formatPrice( amount, cfg ){ 
+      var info = cfg ? { cfg: cfg } : readConfigFromScope();
+      var c = info.cfg || {};
+      var decimals = isNaN(c.decimals) ? 2 : c.decimals;
+      var thousand = c.thousand || ',';
+      var decimal = c.decimal || '.';
+      var symbol = c.symbol || '';
+      var pos = c.pos || 'left';
       var negative = amount < 0;
       amount = Math.abs( parseFloat( amount || 0 ) );
       var parts = amount.toFixed(decimals).split('.');
       parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, thousand);
       var formatted = parts.join(decimal);
-      var pos = bcpoCfg.pos || 'left';
-      if (pos === 'left') return (negative?'-':'') + bcpoCfg.symbol + formatted;
-      if (pos === 'left_space') return (negative?'-':'') + bcpoCfg.symbol + ' ' + formatted;
-      if (pos === 'right') return (negative?'-':'') + formatted + bcpoCfg.symbol;
-      return (negative?'-':'') + formatted + ' ' + bcpoCfg.symbol;
+      if (pos === 'left') return (negative?'-':'') + symbol + formatted;
+      if (pos === 'left_space') return (negative?'-':'') + symbol + ' ' + formatted;
+      if (pos === 'right') return (negative?'-':'') + formatted + symbol;
+      return (negative?'-':'') + formatted + ' ' + symbol;
     }
 
-    // Determine the DOM scope for this bcpo instance so updates affect only
-    // the related product (or modal) and not every price on the page.
-    var $scope = $bcpo.length ? (
-      ($bcpo.closest('.single-left').length ? $bcpo.closest('.single-left') : $bcpo.closest('.product-card, .product, body'))
-    ) : $('body');
-
     // price elements to update (scoped to the product/modal)
-    function getPriceElements(){
-      // prefer scoped price elements (summary, card, inline) within $scope
+    function getPriceElements( $scope ){
       var $els = $();
       $els = $els.add( $scope.find('.card-footer .price') );
       $els = $els.add( $scope.find('.summary .price') );
       $els = $els.add( $scope.find('.price') );
-      // filter to ensure elements are in document
       return $els.filter(function(i,el){ return $(el).closest('body').length; });
     }
 
@@ -66,29 +76,39 @@
         $label.addClass('active');
       }
 
-      // update price display after any change (scoped)
-      updateDisplayedPrice();
+      // update price display after any change (scoped to this option's product)
+      updateDisplayedPrice( this );
     });
 
-    // initialize based on checked inputs within scope (in case of pre-populated values)
-    $scope.find('.food-options-container').each(function(){
-      var $c = $(this);
-      $c.find('input.bcpo-hidden-input:checked').each(function(){
-        $(this).closest('.option-item').addClass('active');
+    // initialize based on checked inputs within each scope (in case of pre-populated values)
+    // Only initialize scopes that contain `.bcpo-frontend` or are `.single-left` (modal/single product)
+    $('.bcpo-frontend, .single-left').each(function(){
+      var $s = $(this).closest('.single-left, .product-card, .product');
+      if ( !$s.length ) $s = $(this);
+      $s.find('.food-options-container').each(function(){
+        $(this).find('input.bcpo-hidden-input:checked').each(function(){
+          $(this).closest('.option-item').addClass('active');
+        });
       });
+      // update price for this scope
+      updateDisplayedPrice( $s );
     });
 
     // recalc price on any input change (covers keyboard changes)
     $(document).on('change', '.food-options-container input.bcpo-hidden-input', function(){
-      updateDisplayedPrice();
+      updateDisplayedPrice( this );
     });
 
-    function updateDisplayedPrice(){
-      var $els = getPriceElements();
+    function updateDisplayedPrice( context ){
+      // determine scope from context element or default to body
+      var $ctx = context ? $(context) : $();
+      var info = readConfigFromScope( $ctx );
+      var $scope = info.wrap;
+      var cfg = info.cfg;
+      var $els = getPriceElements( $scope );
       if (! $els || $els.length === 0) return;
-      var base = parseFloat( bcpoCfg.basePrice || 0 );
+      var base = parseFloat( cfg.basePrice || 0 );
       var extra = 0;
-      // only consider option inputs within this scope (product/modal)
       $scope.find('.food-options-container').each(function(){
         $(this).find('input.bcpo-hidden-input:checked').each(function(){
           var p = parseFloat( $(this).data('price') || $(this).closest('.option-item').data('price') || 0 );
@@ -96,13 +116,11 @@
         });
       });
       var total = parseFloat( base ) + parseFloat( extra );
-      var newHtml = formatPrice( total );
-      // update all matched price elements
+      var newHtml = formatPrice( total, cfg );
       $els.each(function(){ animateNumberChange( $(this), newHtml ); });
     }
 
-    // initialize displayed price
-    updateDisplayedPrice();
+    // initialize displayed price for each scope is handled above per-scope
     
     // animate only numeric part of the price when it changes
     function animateNumberChange($el, newHtml){
