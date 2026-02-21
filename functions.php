@@ -8,6 +8,22 @@ add_action( 'wp_enqueue_scripts', function () {
 });
 
 /**
+ * Add bottom spacing to body only on single product pages to account for
+ * the fixed purchase footer. This injects inline CSS attached to the
+ * child-style handle so it only loads when `is_product()` is true.
+ */
+function blocksy_child_single_product_body_spacing() {
+	if ( ! function_exists( 'is_product' ) || ! is_product() ) {
+		return;
+	}
+
+	// Ensure child-style is registered/enqueued (it is above). Attach inline CSS.
+	$css = 'body.single-product{padding-bottom:100px!important;}';
+	wp_add_inline_style( 'child-style', $css );
+}
+add_action( 'wp_enqueue_scripts', 'blocksy_child_single_product_body_spacing', 20 );
+
+/**
  * Shortcode to render food product grid for Elementor or any content area.
  * Usage: [food_products limit="6" columns="3" category=""]
  */

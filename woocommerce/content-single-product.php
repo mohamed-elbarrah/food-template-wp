@@ -19,7 +19,7 @@ if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
       <div class="single-excerpt"><?php echo wp_kses_post( wpautop( $short ) ); ?></div>
     <?php endif; ?>
 
-    <style>body{margin-bottom:100px!important;}</style>
+    
     <?php
     /**
      * Render product options from BCPO above the card footer so they appear

@@ -1,0 +1,26 @@
+/* Add-to-cart toast styles (RTL friendly) */
+.bcpo-add-to-cart-toast{position:fixed;z-index:9999;bottom:8px;left:50%;transform:translateX(-50%) translateY(8px);display:none;align-items:center;justify-content:center;pointer-events:none;width:100%;max-width:100%}
+.bcpo-add-to-cart-toast .bcpo-add-toast-inner{pointer-events:auto;background:var(--bg-light,#fff);border-radius:14px;box-shadow:0 12px 30px rgba(3,8,18,0.12);max-width:760px;min-width:260px;width:calc(100% - 40px);padding:14px 18px;display:flex;align-items:center;gap:14px;direction:rtl}
+.bcpo-add-to-cart-toast .bcpo-toast-close{background:transparent;border:0;font-size:22px;cursor:pointer;color:var(--text-dark,#0b1623)}
+.bcpo-add-to-cart-toast .bcpo-toast-content{flex:1}
+.bcpo-add-to-cart-toast .bcpo-toast-title{margin:0 0 6px;font-size:18px;color:var(--text-dark,#0b1623)}
+.bcpo-add-to-cart-toast .bcpo-toast-sub{margin:0;color:var(--text-muted,#6b7280)}
+.bcpo-add-to-cart-toast .bcpo-toast-actions{display:flex;gap:10px;align-items:center}
+.bcpo-add-to-cart-toast .bcpo-toast-action{padding:10px 16px;border-radius:8px;border:0;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.bcpo-add-to-cart-toast .bcpo-go-checkout{background:var(--primary-orange,#000);color:#fff}
+.bcpo-add-to-cart-toast .bcpo-continue{background:transparent;border:1px solid rgba(11,22,35,0.08);color:var(--text-dark,#0b1623)}
+.bcpo-add-to-cart-toast{opacity:0;transform:translateX(-50%) translateY(8px);transition:opacity .25s ease,transform .25s ease;pointer-events:none}
+.bcpo-add-to-cart-toast.bcpo-show{opacity:1;transform:translateX(-50%) translateY(0);display:flex;pointer-events:auto}
+@media (max-width:720px){
+	.bcpo-add-to-cart-toast .bcpo-add-toast-inner{
+		width:calc(100% - 24px);
+		border-radius:12px;
+		flex-direction:column;
+		align-items:stretch;
+		padding:12px 14px;
+	}
+	/* Center text and stack actions full width on mobile */
+	.bcpo-add-to-cart-toast .bcpo-toast-content{ text-align:center; }
+	.bcpo-add-to-cart-toast .bcpo-toast-actions{ display:flex; flex-direction:column; gap:10px; }
+	.bcpo-add-to-cart-toast .bcpo-toast-action{ width:100%; box-sizing:border-box; justify-content:center }
+}

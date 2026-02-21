@@ -7,6 +7,7 @@ require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/admin.php';
 require_once __DIR__ . '/save.php';
 require_once __DIR__ . '/frontend.php';
+require_once __DIR__ . '/add-to-cart-toast.php';
 
 // Register meta so block editor / REST can save product options
 add_action( 'init', function() {
@@ -59,3 +60,15 @@ add_action( 'wp_enqueue_scripts', function() {
         'nonce'    => wp_create_nonce( 'bcpo-rate' ),
     ) );
 } );
+
+// Enqueue add-to-cart toast assets on all front-end pages (used after AJAX add-to-cart)
+add_action( 'wp_enqueue_scripts', function() {
+    $base = get_stylesheet_directory_uri() . '/inc/product-options/assets';
+    wp_enqueue_style( 'bcpo-add-to-cart-toast', $base . '/add-to-cart-toast.css', array(), '1.0' );
+    wp_enqueue_script( 'bcpo-add-to-cart-toast', $base . '/add-to-cart-toast.js', array( 'jquery' ), '1.0', true );
+    // expose cart url for the checkout button
+    wp_localize_script( 'bcpo-add-to-cart-toast', 'bcpo_toast', array(
+        'cart_url' => wc_get_cart_url(),
+        'assets_base' => $base,
+    ) );
+} , 20 );
