@@ -4,14 +4,43 @@
 
     function ensure(){
         container = container || document.querySelector('.bcpo-add-to-cart-toast');
+        if (container && container.parentNode && container.parentNode !== document.body) {
+            try { document.body.appendChild(container); } catch (e) { /* ignore */ }
+        }
     }
 
     function closeToast(){
         ensure(); if(!container) return;
         container.classList.remove('bcpo-show');
         container.setAttribute('aria-hidden', 'true');
-        try{ container.style.display = 'none'; }catch(e){}
         if(hideTimer){ clearTimeout(hideTimer); hideTimer = null; }
+
+        // Wait for the CSS transition to finish before hiding the element
+        // This ensures the close uses the same smooth transform/opacity effect
+        var once = false;
+        function hideNow(){
+            if(once) return; once = true;
+            try{ container.style.display = 'none'; }catch(e){}
+        }
+
+        try{
+            var cs = window.getComputedStyle(container);
+            var td = cs && (cs.transitionDuration || cs['transition-duration']);
+            var maxMs = 0;
+            if(td){
+                td.split(',').forEach(function(s){ var n = parseFloat(s) || 0; if(n>maxMs) maxMs = n; });
+                maxMs = Math.ceil(maxMs * 1000) + 50;
+            }
+            if(maxMs > 20){
+                var handler = function(ev){ if(ev && ev.target === container){ container.removeEventListener('transitionend', handler); hideNow(); } };
+                container.addEventListener('transitionend', handler);
+                setTimeout(hideNow, maxMs + 50);
+            } else {
+                setTimeout(hideNow, 260);
+            }
+        }catch(e){
+            setTimeout(hideNow, 260);
+        }
     }
 
     function cleanupWooInsertions(){

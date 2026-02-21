@@ -25,9 +25,7 @@
         $g.append($('<p class="bcpo-field">').append($('<label class="bcpo-label">طريقة اختيار العميل</label>')).append($type));
         $g.append($('<p class="bcpo-help small">').text('حدد طريقة اختيار العميل: اختيار واحد أو اختيار متعدد.'));
         $g.append($('<p class="bcpo-field">').append($('<label class="bcpo-label">هل هذا القسم إلزامي</label>')).append('<input type="checkbox" class="bcpo-required">').find('input').prop('checked', !!group.required).end());
-        $g.append($('<p class="bcpo-help small">').text('عند التفعيل، لن يتمكن العميل من إتمام الطلب بدون اختيار من هذا القسم.'));
-        $g.append($('<p class="form-field form-field-wide">').append($('<label class="bcpo-label">وصف توضيحي (اختياري)</label>')).append($('<textarea class="bcpo-desc-input" rows="2" placeholder="يمكنك كتابة ملاحظة قصيرة لمساعدة العميل. مثال: يمكنك اختيار 3 إضافات كحد أقصى."></textarea>').val(group.description || '')));
-        // min/max selection removed per spec
+        $g.append($('<p class="bcpo-help small">').text('عند التفعيل، لن يتمكن العميل من إتمام الطلب بدون اختيار من هذا القسم.'));        // min/max selection removed per spec
         var $opts = $('<div class="bcpo-options">');
         $opts.append($('<p class="bcpo-options-title">').text('الخيارات المتاحة داخل هذا القسم'));
         $opts.append($('<p class="bcpo-help small">').text('أضف الخيارات التي يمكن للعميل اختيارها. إذا لم يكن هناك سعر إضافي اترك السعر 0.'));

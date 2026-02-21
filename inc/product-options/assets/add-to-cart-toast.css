@@ -1,5 +1,5 @@
 /* Add-to-cart toast styles (RTL friendly) */
-.bcpo-add-to-cart-toast{position:fixed;z-index:9999;bottom:8px;left:50%;transform:translateX(-50%) translateY(8px);display:none;align-items:center;justify-content:center;pointer-events:none;width:100%;max-width:100%}
+.bcpo-add-to-cart-toast{position:fixed!important;z-index:2147483647!important;bottom:8px;left:50%;transform:translateX(-50%) translateY(8px);display:none;align-items:center;justify-content:center;pointer-events:none;width:100%;max-width:100%}
 .bcpo-add-to-cart-toast .bcpo-add-toast-inner{pointer-events:auto;background:var(--bg-light,#fff);border-radius:14px;box-shadow:0 12px 30px rgba(3,8,18,0.12);max-width:760px;min-width:260px;width:calc(100% - 40px);padding:14px 18px;display:flex;align-items:center;gap:14px;direction:rtl}
 .bcpo-add-to-cart-toast .bcpo-toast-close{background:transparent;border:0;font-size:22px;cursor:pointer;color:var(--text-dark,#0b1623)}
 .bcpo-add-to-cart-toast .bcpo-toast-content{flex:1}
