@@ -401,6 +401,11 @@ if ( file_exists( get_stylesheet_directory() . '/inc/product-options/init.php' )
 	require_once get_stylesheet_directory() . '/inc/product-options/init.php';
 }
 
+// Load features modal helper (provides shortcode and template helper)
+if ( file_exists( get_stylesheet_directory() . '/features.php' ) ) {
+	require_once get_stylesheet_directory() . '/features.php';
+}
+
 /**
  * AJAX handler to submit a quick product rating.
  * Saves a comment with meta key 'rating' so WooCommerce can pick it up.

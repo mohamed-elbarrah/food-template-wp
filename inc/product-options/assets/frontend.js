@@ -28,16 +28,20 @@
       return (negative?'-':'') + formatted + ' ' + bcpoCfg.symbol;
     }
 
-    // price elements to update (may be multiple: inline footer, fixed footer, summary)
+    // Determine the DOM scope for this bcpo instance so updates affect only
+    // the related product (or modal) and not every price on the page.
+    var $scope = $bcpo.length ? (
+      ($bcpo.closest('.single-left').length ? $bcpo.closest('.single-left') : $bcpo.closest('.product-card, .product, body'))
+    ) : $('body');
+
+    // price elements to update (scoped to the product/modal)
     function getPriceElements(){
+      // prefer scoped price elements (summary, card, inline) within $scope
       var $els = $();
-      // inline/footer prices inside product card/footer
-      $els = $els.add( $('.card-footer .price') );
-      // any summary price present
-      $els = $els.add( $('.summary .price') );
-      // fallback to any price on page
-      $els = $els.add( $('.price') );
-      // unique and return
+      $els = $els.add( $scope.find('.card-footer .price') );
+      $els = $els.add( $scope.find('.summary .price') );
+      $els = $els.add( $scope.find('.price') );
+      // filter to ensure elements are in document
       return $els.filter(function(i,el){ return $(el).closest('body').length; });
     }
 
@@ -62,12 +66,12 @@
         $label.addClass('active');
       }
 
-      // update price display after any change
+      // update price display after any change (scoped)
       updateDisplayedPrice();
     });
 
-    // initialize based on checked inputs (in case of pre-populated values)
-    $('.food-options-container').each(function(){
+    // initialize based on checked inputs within scope (in case of pre-populated values)
+    $scope.find('.food-options-container').each(function(){
       var $c = $(this);
       $c.find('input.bcpo-hidden-input:checked').each(function(){
         $(this).closest('.option-item').addClass('active');
@@ -84,7 +88,8 @@
       if (! $els || $els.length === 0) return;
       var base = parseFloat( bcpoCfg.basePrice || 0 );
       var extra = 0;
-      $('.food-options-container').each(function(){
+      // only consider option inputs within this scope (product/modal)
+      $scope.find('.food-options-container').each(function(){
         $(this).find('input.bcpo-hidden-input:checked').each(function(){
           var p = parseFloat( $(this).data('price') || $(this).closest('.option-item').data('price') || 0 );
           if (!isNaN(p)) extra += p;

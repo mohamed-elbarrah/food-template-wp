@@ -44,11 +44,8 @@ $price     = $product->get_price_html();
                 </div>
             </div>
 
-            <?php if ( $product->is_type( 'simple' ) ) : ?>
-                <a href="<?php echo esc_url( $product->add_to_cart_url() ); ?>" class="add-btn add_to_cart_button full-width-btn"><?php esc_html_e( 'اطلب الحين', 'blocksy-child' ); ?></a>
-            <?php else : ?>
-                <a href="<?php echo $permalink; ?>" class="add-btn full-width-btn"><?php esc_html_e( 'View Product', 'blocksy-child' ); ?></a>
-            <?php endif; ?>
+            <?php // Simple modal trigger button (no add-to-cart logic) ?>
+            <button class="add-btn full-width-btn bcpo-features-open" data-product-id="<?php echo esc_attr( $product->get_id() ); ?>" type="button"><?php esc_html_e( 'اطلب الحين', 'blocksy-child' ); ?></button>
         </div>
     </div>
 </article>
