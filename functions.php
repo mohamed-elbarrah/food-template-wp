@@ -1,7 +1,43 @@
 <?php
-if (! defined('WP_DEBUG')) {
-	die( 'Direct access forbidden.' );
+defined( 'ABSPATH' ) || exit;
+
+/** Recommend WooCommerce without silently installing or activating plugins. */
+function blocksy_child_woocommerce_notice() {
+	if ( class_exists( 'WooCommerce' ) || ! current_user_can( 'install_plugins' ) ) {
+		return;
+	}
+	$url = wp_nonce_url( self_admin_url( 'update.php?action=install-plugin&plugin=woocommerce' ), 'install-plugin_woocommerce' );
+	printf(
+		'<div class="notice notice-warning"><p>%s <a href="%s">%s</a></p></div>',
+		esc_html__( 'Food for Blocksy needs WooCommerce for its shop features.', 'blocksy-child' ),
+		esc_url( $url ),
+		esc_html__( 'Install WooCommerce', 'blocksy-child' )
+	);
 }
+add_action( 'admin_notices', 'blocksy_child_woocommerce_notice' );
+
+function blocksy_child_demo_setup_notice() {
+	$screen = get_current_screen();
+	if ( ! class_exists( 'WooCommerce' ) || get_option( 'blocksy_child_demo_store_created' ) || ! $screen || ! in_array( $screen->id, array( 'dashboard', 'appearance_page_food-store-setup', 'themes' ), true ) ) {
+		return;
+	}
+	$url = admin_url( 'themes.php?page=food-store-setup' );
+	printf(
+		'<div class="notice notice-info"><p><strong>%s</strong> %s <a class="button button-primary" href="%s">%s</a></p></div>',
+		esc_html__( 'Your food storefront is ready to set up.', 'blocksy-child' ),
+		esc_html__( 'Create sample products, categories, and a homepage to preview the design.', 'blocksy-child' ),
+		esc_url( $url ),
+		esc_html__( 'Set up demo store', 'blocksy-child' )
+	);
+}
+add_action( 'admin_notices', 'blocksy_child_demo_setup_notice' );
+
+add_action( 'after_setup_theme', function() {
+	add_theme_support( 'woocommerce' );
+}, 20 );
+
+require_once get_stylesheet_directory() . '/inc/demo-setup.php';
+
 add_action( 'wp_enqueue_scripts', function () {
 	wp_enqueue_style( 'parent-style', get_template_directory_uri() . '/style.css' );
 	wp_enqueue_style( 'child-style', get_stylesheet_directory_uri() . '/style.css', array( 'parent-style' ), wp_get_theme()->get( 'Version' ) );
@@ -127,6 +163,9 @@ add_shortcode( 'food_products', 'blocksy_child_food_products_shortcode' );
  * Usage: [category_cards limit="6" parent="0"]
  */
 function blocksy_child_category_cards_shortcode( $atts ) {
+	if ( ! class_exists( 'WooCommerce' ) ) {
+		return '';
+	}
 	$atts = shortcode_atts( array(
 		'limit'  => 6,
 		'parent' => 0,
@@ -254,7 +293,7 @@ add_action( 'wp', function() {
  * Output horizontally-scrollable product category tabs above the product grid.
  */
 function blocksy_child_render_category_tabs() {
-	if ( ! function_exists( 'get_terms' ) ) {
+	if ( ! class_exists( 'WooCommerce' ) ) {
 		return;
 	}
 
@@ -413,12 +452,12 @@ function blocksy_child_print_color_vars() {
 add_action( 'wp_head', 'blocksy_child_print_color_vars', 5 );
 
 // Load product options admin module
-if ( file_exists( get_stylesheet_directory() . '/inc/product-options/init.php' ) ) {
+if ( class_exists( 'WooCommerce' ) && file_exists( get_stylesheet_directory() . '/inc/product-options/init.php' ) ) {
 	require_once get_stylesheet_directory() . '/inc/product-options/init.php';
 }
 
 // Load features modal helper (provides shortcode and template helper)
-if ( file_exists( get_stylesheet_directory() . '/features.php' ) ) {
+if ( class_exists( 'WooCommerce' ) && file_exists( get_stylesheet_directory() . '/features.php' ) ) {
 	require_once get_stylesheet_directory() . '/features.php';
 }
 
@@ -427,6 +466,9 @@ if ( file_exists( get_stylesheet_directory() . '/features.php' ) ) {
  * Saves a comment with meta key 'rating' so WooCommerce can pick it up.
  */
 function bcpo_ajax_submit_rating() {
+	if ( ! class_exists( 'WooCommerce' ) ) {
+		wp_send_json_error( array( 'message' => 'WooCommerce is not active.' ), 503 );
+	}
 	// check nonce
 	if ( empty( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'bcpo-rate' ) ) {
 		wp_send_json_error( array( 'message' => 'Invalid nonce' ), 403 );
@@ -435,10 +477,12 @@ function bcpo_ajax_submit_rating() {
 	$product_id = isset( $_POST['product_id'] ) ? intval( wp_unslash( $_POST['product_id'] ) ) : 0;
 	$rating = isset( $_POST['rating'] ) ? intval( wp_unslash( $_POST['rating'] ) ) : 0;
 	$comment = isset( $_POST['comment'] ) ? sanitize_text_field( wp_unslash( $_POST['comment'] ) ) : '';
-	$comment_id = isset( $_POST['comment_id'] ) ? intval( wp_unslash( $_POST['comment_id'] ) ) : 0;
+	$comment_id = isset( $_POST['comment_id'] ) ? absint( wp_unslash( $_POST['comment_id'] ) ) : 0;
+	$product_post = $product_id ? get_post( $product_id ) : null;
+	$comment = substr( $comment, 0, 2000 );
 
-	if ( $product_id <= 0 || $rating < 1 || $rating > 5 ) {
-		wp_send_json_error( array( 'message' => 'Invalid data' ), 400 );
+	if ( ! $product_post || 'product' !== $product_post->post_type || 'publish' !== $product_post->post_status || ! comments_open( $product_id ) || $rating < 1 || $rating > 5 ) {
+		wp_send_json_error( array( 'message' => 'Invalid product or review data.' ), 400 );
 	}
 
 	$user = wp_get_current_user();
@@ -447,7 +491,7 @@ function bcpo_ajax_submit_rating() {
 	if ( $comment_id > 0 ) {
 		// attempt to update existing comment - only allow owner or admin
 		$existing = get_comment( $comment_id );
-		if ( ! $existing || intval( $existing->comment_post_ID ) !== $product_id ) {
+		if ( ! $existing || '1' !== (string) $existing->comment_approved || intval( $existing->comment_post_ID ) !== $product_id ) {
 			wp_send_json_error( array( 'message' => 'Invalid comment' ), 400 );
 		}
 		$allowed = false;
@@ -464,7 +508,6 @@ function bcpo_ajax_submit_rating() {
 		$update = array(
 			'comment_ID'      => $comment_id,
 			'comment_content' => $comment,
-			'comment_approved'=> 1,
 		);
 		$res = wp_update_comment( $update );
 		if ( ! $res ) {
@@ -481,15 +524,14 @@ function bcpo_ajax_submit_rating() {
 			'comment_type'    => 'review',
 			'comment_parent'  => 0,
 			'user_id'         => $user && $user->exists() ? intval( $user->ID ) : 0,
-			'comment_approved'=> 1,
 		);
 
-		$saved_comment_id = wp_insert_comment( $commentdata );
-		if ( ! $saved_comment_id ) {
-			wp_send_json_error( array( 'message' => 'Could not save rating' ), 500 );
+		$saved_comment_id = wp_new_comment( $commentdata, true );
+		if ( is_wp_error( $saved_comment_id ) || ! $saved_comment_id ) {
+			wp_send_json_error( array( 'message' => is_wp_error( $saved_comment_id ) ? $saved_comment_id->get_error_message() : 'Could not save rating', 'comment_id' => 0 ), 400 );
 		}
 
-		// save rating meta in the format WooCommerce expects
+		// Save the rating in the format WooCommerce expects; honor WordPress review moderation.
 		add_comment_meta( $saved_comment_id, 'rating', $rating );
 	}
 

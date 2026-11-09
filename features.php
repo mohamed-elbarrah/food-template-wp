@@ -210,53 +210,24 @@ add_action( 'wp_footer', function() {
     bcpo_features_modal_markup( true, false );
 }, 5 );
 
-/**
- * AJAX endpoint to fetch the `.single-left` HTML for a product by ID.
- * We fetch the product permalink, retrieve the rendered HTML and extract
- * the element with class `single-left` so the modal shows the same markup.
- */
+/** Render quick-view content directly; do not make an HTTP request back to the site. */
 function bcpo_ajax_fetch_single_left() {
-    $product_id = isset( $_REQUEST['product_id'] ) ? intval( wp_unslash( $_REQUEST['product_id'] ) ) : 0;
-    if ( $product_id <= 0 ) {
-        wp_send_json_error( array( 'message' => 'Invalid product id' ), 400 );
+    $product_id = isset( $_POST['product_id'] ) ? absint( wp_unslash( $_POST['product_id'] ) ) : 0;
+    $product = $product_id ? wc_get_product( $product_id ) : false;
+    if ( ! $product || 'publish' !== get_post_status( $product_id ) || ! $product->is_visible() ) {
+        wp_send_json_error( array( 'message' => __( 'Product not found.', 'blocksy-child' ) ), 404 );
     }
 
-    $permalink = get_permalink( $product_id );
-    if ( ! $permalink ) {
-        wp_send_json_error( array( 'message' => 'Could not get permalink' ), 404 );
+    ob_start();
+    echo '<h2 class="single-product-title">' . esc_html( $product->get_name() ) . '</h2>';
+    if ( $product->get_short_description() ) {
+        echo '<div class="single-excerpt">' . wp_kses_post( wpautop( $product->get_short_description() ) ) . '</div>';
     }
-
-    $resp = wp_remote_get( $permalink );
-    if ( is_wp_error( $resp ) || wp_remote_retrieve_response_code( $resp ) !== 200 ) {
-        wp_send_json_error( array( 'message' => 'Could not fetch product page' ), 500 );
-    }
-
-    $html = wp_remote_retrieve_body( $resp );
-
-    // Parse HTML and extract element with class `single-left`
-    libxml_use_internal_errors( true );
-    $dom = new DOMDocument();
-    $loaded = $dom->loadHTML( '<?xml encoding="utf-8" ?>' . $html );
-    libxml_clear_errors();
-
-    if ( ! $loaded ) {
-        wp_send_json_error( array( 'message' => 'Could not parse HTML' ), 500 );
-    }
-
-    $xpath = new DOMXPath( $dom );
-    $nodes = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' single-left ')]");
-    if ( ! $nodes || $nodes->length === 0 ) {
-        wp_send_json_error( array( 'message' => 'single-left not found' ), 404 );
-    }
-
-    // Return the first match's HTML
-    $node = $nodes->item(0);
-    $inner = '';
-    foreach ( $node->childNodes as $child ) {
-        $inner .= $dom->saveHTML( $child );
-    }
-
-    wp_send_json_success( array( 'html' => $inner ) );
+    echo '<p class="price">' . wp_kses_post( $product->get_price_html() ) . '</p>';
+    do_action( 'bcpo_render_product_options', $product_id );
+    echo '<p><a class="add-btn" href="' . esc_url( get_permalink( $product_id ) ) . '">' . esc_html__( 'View product and order', 'blocksy-child' ) . '</a></p>';
+    $html = ob_get_clean();
+    wp_send_json_success( array( 'html' => $html ) );
 }
 add_action( 'wp_ajax_bcpo_fetch_single_left', 'bcpo_ajax_fetch_single_left' );
 add_action( 'wp_ajax_nopriv_bcpo_fetch_single_left', 'bcpo_ajax_fetch_single_left' );

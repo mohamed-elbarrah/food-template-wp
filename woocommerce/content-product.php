@@ -1,51 +1,36 @@
 <?php
-/**
- * Custom product card template for child theme
- * Horizontal layout: text left, media right
- */
+/** Food catalog product card. */
 defined( 'ABSPATH' ) || exit;
 
 global $product;
-
-if ( empty( $product ) || ! $product->is_visible() ) {
+if ( ! $product instanceof WC_Product || ! $product->is_visible() ) {
     return;
 }
-
-$permalink = esc_url( get_permalink( $product->get_id() ) );
-$title     = wp_kses_post( get_the_title() );
-$excerpt   = wp_kses_post( wp_trim_words( get_the_excerpt(), 25, '...' ) );
-$price     = $product->get_price_html();
-
+$product_id = $product->get_id();
+$permalink  = get_permalink( $product_id );
 ?>
-<article class="product-card" itemscope itemtype="http://schema.org/Product">
+<article <?php wc_product_class( 'product-card', $product ); ?>>
     <div class="card-image">
-        <a href="<?php echo $permalink; ?>" class="product-link" aria-label="<?php esc_attr_e( 'View product', 'blocksy-child' ); ?>">
-            <?php echo get_the_post_thumbnail( $product->get_id(), 'large', array( 'loading' => 'lazy' ) ); ?>
+        <a href="<?php echo esc_url( $permalink ); ?>" class="product-link" aria-label="<?php echo esc_attr( sprintf( __( 'View %s', 'blocksy-child' ), $product->get_name() ) ); ?>">
+            <?php echo wp_kses_post( $product->get_image( 'woocommerce_thumbnail', array( 'loading' => 'lazy' ) ) ); ?>
         </a>
     </div>
-
     <div class="card-content">
         <div class="title-price-row">
-            <a href="<?php echo $permalink; ?>" class="product-link"><h3 class="product-title" itemprop="name"><?php echo $title; ?></h3></a>
+            <a href="<?php echo esc_url( $permalink ); ?>" class="product-link"><h3 class="product-title"><?php echo esc_html( $product->get_name() ); ?></h3></a>
         </div>
-
-        <p class="ingredients"><?php echo $excerpt; ?></p>
-
+        <p class="ingredients"><?php echo esc_html( wp_trim_words( wp_strip_all_tags( $product->get_short_description() ?: $product->get_description() ), 25 ) ); ?></p>
         <div class="card-footer">
-            
-
-            <div class="card-footer">
             <div class="price-rating-row">
-                <span class="price"><?php echo wc_price( wc_get_price_to_display( $product ) ); ?></span>
-
-                <div class="rating">
-                    <span class="rating-value"><?php echo number_format( (float) $product->get_average_rating(), 1 ); ?></span>
-                    <span class="star">★</span>
-                </div>
+                <span class="price"><?php echo wp_kses_post( $product->get_price_html() ); ?></span>
+                <?php if ( wc_review_ratings_enabled() ) : ?>
+                    <div class="rating" aria-label="<?php echo esc_attr( sprintf( __( 'Rated %s out of 5', 'blocksy-child' ), $product->get_average_rating() ) ); ?>">
+                        <span class="rating-value"><?php echo esc_html( number_format_i18n( (float) $product->get_average_rating(), 1 ) ); ?></span>
+                        <span class="star" aria-hidden="true">★</span>
+                    </div>
+                <?php endif; ?>
             </div>
-
-            <?php // Simple modal trigger button (no add-to-cart logic) ?>
-            <button class="add-btn full-width-btn bcpo-features-open" data-product-id="<?php echo esc_attr( $product->get_id() ); ?>" type="button"><?php esc_html_e( 'اطلب الحين', 'blocksy-child' ); ?></button>
+            <a class="add-btn full-width-btn" href="<?php echo esc_url( $permalink ); ?>"><?php esc_html_e( 'View product', 'blocksy-child' ); ?></a>
         </div>
     </div>
 </article>

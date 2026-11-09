@@ -151,8 +151,7 @@ function bcpo_add_cart_item_data( $cart_item_meta, $product_id, $variation_id ) 
             if ( is_array( $posted ) ) {
                 // checkboxes
                 $vals = array();
-                foreach ( $posted as $oi ) {
-                    $oi = intval( $oi );
+                foreach ( array_unique( array_map( 'absint', $posted ) ) as $oi ) {
                     if ( isset( $group['options'][ $oi ] ) ) {
                         $opt = $group['options'][ $oi ];
                         $vals[] = array( 'label' => $opt['label'], 'price' => floatval( $opt['price'] ) );

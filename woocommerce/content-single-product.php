@@ -20,13 +20,6 @@ if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
     <?php endif; ?>
 
     
-    <?php
-    /**
-     * Render product options from BCPO above the card footer so they appear
-     * before the add-to-cart controls rather than inside the form.
-     */
-    do_action( 'bcpo_render_product_options', $product->get_id() );
-    ?>
     <div class="card-footer">
       <div class="card-footer-inner single-product-container">
         <div class="price-rating-row">
@@ -38,9 +31,10 @@ if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
           </div>
         </div>
 
-        <div class="add-to-cart-row">
+        <div id="food-product-order" class="add-to-cart-row">
           <?php if ( $product->is_type( 'simple' ) ) : ?>
             <form class="custom-single-add-to-cart" action="<?php echo esc_url( $product->add_to_cart_url() ); ?>" method="post">
+              <?php do_action( 'bcpo_render_product_options', $product->get_id() ); ?>
               <div class="qty-wrap" aria-label="Quantity selector">
                 <button type="button" class="qty-btn qty-decrease" aria-label="Decrease quantity">−</button>
                 <input type="number" name="quantity" value="1" min="1" step="1" class="qty-input" aria-label="Quantity" readonly="readonly" />
@@ -337,20 +331,7 @@ endif;
       </div>
 
       <div class="add-to-cart-row">
-        <?php if ( $product->is_type( 'simple' ) ) : ?>
-          <form class="custom-single-add-to-cart fixed-footer-form" action="<?php echo esc_url( $product->add_to_cart_url() ); ?>" method="post">
-            <div class="qty-wrap" aria-label="Quantity selector">
-              <button type="button" class="qty-btn qty-decrease" aria-label="Decrease quantity">−</button>
-              <input type="number" name="quantity" value="1" min="1" step="1" class="qty-input" aria-label="Quantity" readonly="readonly" />
-              <button type="button" class="qty-btn qty-increase" aria-label="Increase quantity">+</button>
-            </div>
-
-            <input type="hidden" name="add-to-cart" value="<?php echo esc_attr( $product->get_id() ); ?>" />
-            <button type="submit" class="add-btn full-width-btn"><?php echo esc_html__( 'اطلب الحين', 'blocksy-child' ); ?></button>
-          </form>
-        <?php else : ?>
-          <?php woocommerce_template_single_add_to_cart(); ?>
-        <?php endif; ?>
+        <a class="add-btn full-width-btn" href="#food-product-order"><?php echo esc_html__( 'Choose options and order', 'blocksy-child' ); ?></a>
       </div>
     </div>
   </div>

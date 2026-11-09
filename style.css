@@ -1,19 +1,22 @@
+/*
+Theme Name: Food for Blocksy
+Description: Food storefront child theme for Blocksy and WooCommerce.
+Author: Mohamed
+Template: blocksy
+Version: 0.1.0
+Text Domain: blocksy-child
+Requires at least: 6.2
+Requires PHP: 7.4
+*/
+
 :root {
 	--card-radius: 16px;
 	--shadow: 0 4px 15px rgba(0,0,0,0.05);
 	--card-padding: 18px;
 	--media-width: 220px;
 	--media-height: 140px;
+	--white: #ffffff;
 }
-
-
-/**
- * Theme Name: Blocksy Child
- * Description: Blocksy Child theme
- * Author: Creative Themes
- * Template: blocksy
- * Text Domain: blocksy
- */
 
 /* Custom product card styles */
 .products li.product-card {
@@ -35,9 +38,8 @@
 
 .products li.product-card .product-card-inner {
 	display: flex;
-	gap: 28px;
-		flex-direction: row;
-		gap: 20px;
+	flex-direction: row;
+	gap: 20px;
 	background: var(--white);
 	border-radius: 12px;
 	padding: 22px;
@@ -59,7 +61,6 @@
 
 .product-card .product-text .product-excerpt {
 	color: var(--text-gray);
-		color: var(--text-gray);
 	line-height: 1.35;
 	margin-bottom: 12px;
 	max-width: 60ch;
@@ -78,10 +79,10 @@
 	height: var(--media-height);
 	border-radius: 12px;
 	overflow: hidden;
-	position: relative;
 	display: block;
+}
 
-	.product-card .product-media .media-bg {
+.product-card .product-media .media-bg {
 	background: var(--yellow);
 	width: 110%;
 	height: 110%;
@@ -89,13 +90,6 @@
 	display: block;
 	transform: translateX(6%);
 	position: relative;
-}
-
-	position: absolute;
-	right: 10px;
-	bottom: 10px;
-		height: 120%;
-	display: block;
 }
 	
 
@@ -371,6 +365,28 @@
 	.product-cat-tabs { padding-left: 0; padding-right: 0; }
 }
 
+.food-home-hero {
+	min-height: 340px;
+	display: flex;
+	align-items: center;
+	padding: clamp(32px, 7vw, 88px);
+	border-radius: 24px;
+	background: linear-gradient(115deg, #fff2d6 0%, #ffe1a6 55%, #f58220 100%);
+	margin: 28px auto;
+}
+.food-home-hero-content { max-width: 620px; }
+.food-home-eyebrow { color: #8b4513; font-size: .8rem; font-weight: 800; letter-spacing: .12em; }
+.food-home-hero h1 { font-size: clamp(2.4rem, 6vw, 4.5rem); line-height: 1.05; margin: 10px 0; color: #172033; }
+.food-home-hero-content > p:not(.food-home-eyebrow) { font-size: 1.1rem; max-width: 48ch; }
+.food-home-cta, .food-catalog-filters button { display: inline-flex; align-items: center; justify-content: center; background: #081a3a; color: #fff; border-radius: 10px; padding: 12px 20px; font-weight: 700; text-decoration: none; border: 0; cursor: pointer; }
+.food-home-section { max-width: 1300px; padding: 18px; margin: 0 auto; }
+.food-home-section > h2 { font-size: clamp(1.5rem, 3vw, 2rem); margin-bottom: 18px; }
+.food-catalog-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 8px 0 20px; padding: 16px; background: var(--white, #fff); border: 1px solid var(--muted-border, #e5e7eb); border-radius: 12px; }
+.food-catalog-filters label { display: grid; gap: 5px; font-size: .875rem; font-weight: 600; }
+.food-catalog-filters input, .food-catalog-filters select { min-height: 42px; padding: 8px; border: 1px solid #d1d5db; border-radius: 7px; }
+.food-catalog-filters button { min-height: 42px; }
+@media(max-width:600px) { .food-home-hero { min-height: 280px; padding: 28px 22px; border-radius: 14px; } .food-catalog-filters > * { flex: 1 1 100%; } }
+
 /* Single product two-column layout for child theme */
 .single-product-layout { display: flex; gap: 1rem; align-items: flex-start; margin: 1.5rem 0; }
 .single-left { 
@@ -397,10 +413,12 @@
 /* make the inner form align qty and CTA on a single row */
 .add-to-cart-row .custom-single-add-to-cart {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
 	gap: 12px;
 	width: 100%;
 }
+.add-to-cart-row .bcpo-frontend { flex: 0 0 100%; }
 .add-to-cart-row .qty-wrap {
 	flex: 0 0 64px; /* reserve a small fixed area for two-digit quantities */
 	display: inline-flex;
