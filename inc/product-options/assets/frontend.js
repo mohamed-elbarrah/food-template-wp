@@ -52,10 +52,15 @@
       $els = $els.add( $scope.find('.card-footer .price') );
       $els = $els.add( $scope.find('.summary .price') );
       $els = $els.add( $scope.find('.price') );
+      // The mobile sticky purchase bar lives outside .single-left but must mirror its total.
+      if ( $scope.is('.single-left') ) $els = $els.add( $('.single-product-container > .card-footer.fixed .price') );
       return $els.filter(function(i,el){ return $(el).closest('body').length; });
     }
 
     $(document).on('click', '.food-options-container .option-item', function(e){
+      // The option control is nested in a label; prevent the browser's second
+      // native toggle after we update its checked state ourselves.
+      e.preventDefault();
       var $label = $(this);
       var $container = $label.closest('.food-options-container');
       var type = $container.data('type');

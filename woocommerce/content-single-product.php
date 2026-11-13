@@ -37,7 +37,7 @@ if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
               <?php do_action( 'bcpo_render_product_options', $product->get_id() ); ?>
               <div class="qty-wrap" aria-label="Quantity selector">
                 <button type="button" class="qty-btn qty-decrease" aria-label="Decrease quantity">−</button>
-                <input type="number" name="quantity" value="1" min="1" step="1" class="qty-input" aria-label="Quantity" readonly="readonly" />
+                <input type="number" name="quantity" value="1" min="1" max="<?php echo esc_attr( $product->get_max_purchase_quantity() ); ?>" step="1" class="qty-input" aria-label="<?php echo esc_attr__( 'Quantity', 'blocksy-child' ); ?>" readonly="readonly" />
                 <button type="button" class="qty-btn qty-increase" aria-label="Increase quantity">+</button>
               </div>
 
@@ -64,7 +64,9 @@ if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
             });
             inc && inc.addEventListener('click', function(){
               var val = parseInt(input.value) || 1;
-              input.value = val + 1;
+              var maxValue = parseInt(input.getAttribute('max'));
+              var max = maxValue > 0 ? maxValue : Infinity;
+              if (val < max) input.value = val + 1;
             });
           }
           document.addEventListener('DOMContentLoaded', function(){
@@ -77,14 +79,7 @@ if ( ! $product || ! is_a( $product, 'WC_Product' ) ) {
   </div>
 
   <div class="single-right">
-    <?php
-    $image = $product->get_image( 'large' );
-    if ( $image ) {
-        echo wp_kses_post( $image );
-    } else {
-        echo '<img src="' . esc_url( wc_placeholder_img_src( 'large' ) ) . '" alt="' . esc_attr__( 'Placeholder', 'blocksy-child' ) . '" class="single-product-image" />';
-    }
-    ?>
+    <?php wc_get_template( 'single-product/product-image.php' ); ?>
   </div>
 </div>
 

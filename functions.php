@@ -34,6 +34,9 @@ add_action( 'admin_notices', 'blocksy_child_demo_setup_notice' );
 
 add_action( 'after_setup_theme', function() {
 	add_theme_support( 'woocommerce' );
+	add_theme_support( 'wc-product-gallery-zoom' );
+	add_theme_support( 'wc-product-gallery-lightbox' );
+	add_theme_support( 'wc-product-gallery-slider' );
 }, 20 );
 
 require_once get_stylesheet_directory() . '/inc/demo-setup.php';
@@ -41,6 +44,7 @@ require_once get_stylesheet_directory() . '/inc/demo-setup.php';
 add_action( 'wp_enqueue_scripts', function () {
 	wp_enqueue_style( 'parent-style', get_template_directory_uri() . '/style.css' );
 	wp_enqueue_style( 'child-style', get_stylesheet_directory_uri() . '/style.css', array( 'parent-style' ), wp_get_theme()->get( 'Version' ) );
+	wp_add_inline_script( 'jquery-core', "document.addEventListener('click',function(e){var b=e.target.closest('.food-products-more');if(!b||b.disabled)return;b.disabled=true;var d=new FormData();d.append('action','food_products_more');d.append('nonce',b.dataset.nonce);d.append('page',b.dataset.page);d.append('limit',b.dataset.limit);d.append('category',b.dataset.category);fetch(b.dataset.action,{method:'POST',body:d,credentials:'same-origin'}).then(function(r){return r.json()}).then(function(r){if(!r.success)throw Error();b.closest('.food-products').querySelector('.product-grid').insertAdjacentHTML('beforeend',r.data.html);b.dataset.page=Number(b.dataset.page)+1;if(!r.data.has_more)b.remove();else b.disabled=false}).catch(function(){b.disabled=false})});document.addEventListener('DOMContentLoaded',function(){if(!('IntersectionObserver'in window))return;var io=new IntersectionObserver(function(entries){entries.forEach(function(x){if(x.isIntersecting)x.target.click()})},{rootMargin:'0px 300px'});document.querySelectorAll('.food-products--horizontal .food-products-more').forEach(function(b){io.observe(b)})});");
 });
 
 /**
@@ -54,7 +58,7 @@ function blocksy_child_single_product_body_spacing() {
 	}
 
 	// Ensure child-style is registered/enqueued (it is above). Attach inline CSS.
-	$css = 'body.single-product{padding-bottom:100px!important;}';
+	$css = '@media(max-width:768px){body.single-product{padding-bottom:118px!important;}}';
 	wp_add_inline_style( 'child-style', $css );
 }
 add_action( 'wp_enqueue_scripts', 'blocksy_child_single_product_body_spacing', 20 );
@@ -70,16 +74,20 @@ function blocksy_child_food_products_shortcode( $atts ) {
 
 	$atts = shortcode_atts( array(
 		'limit'         => 6,
-		'columns'       => 3,
+		'columns'       => 5,
 		'category'      => '',
+		'layout'        => 'vertical',
+		'pagination'    => 'true',
 		'show_more'     => 'false',
 		'show_more_text'=> 'عرض المزيد',
 		'show_more_class'=> '',
 	), $atts, 'food_products' );
 
-	$limit    = absint( $atts['limit'] );
-	$columns  = absint( $atts['columns'] );
+	$limit    = max( 1, absint( $atts['limit'] ) );
+	$columns  = min( 8, max( 1, absint( $atts['columns'] ) ) );
 	$cat      = sanitize_text_field( $atts['category'] );
+	$layout   = in_array( $atts['layout'], array( 'horizontal', 'vertical' ), true ) ? $atts['layout'] : 'vertical';
+	$pagination = filter_var( $atts['pagination'], FILTER_VALIDATE_BOOLEAN );
 	$show_more = filter_var( $atts['show_more'], FILTER_VALIDATE_BOOLEAN );
 	$show_more_text = sanitize_text_field( $atts['show_more_text'] );
 	$show_more_class = sanitize_text_field( $atts['show_more_class'] );
@@ -90,6 +98,7 @@ function blocksy_child_food_products_shortcode( $atts ) {
 		'posts_per_page' => $limit,
 		'post_status'    => 'publish',
 		'orderby'        => 'date',
+		'paged'          => max( 1, absint( get_query_var( 'food_page', 1 ) ) ),
 	);
 
 	if ( $cat ) {
@@ -110,7 +119,8 @@ function blocksy_child_food_products_shortcode( $atts ) {
 	}
 
 	// Render using the theme template so archive & shortcode use same markup
-	$out = '<div class="product-grid" data-columns="' . esc_attr( $columns ) . '">';
+	$wrapper_class = 'food-products food-products--' . $layout;
+	$out = '<section class="' . esc_attr( $wrapper_class ) . '"><div class="product-grid" style="--food-columns:' . esc_attr( $columns ) . '" data-columns="' . esc_attr( $columns ) . '">';
 
 	ob_start();
 	while ( $q->have_posts() ) {
@@ -123,6 +133,14 @@ function blocksy_child_food_products_shortcode( $atts ) {
 	wp_reset_postdata();
 
 	$out .= '</div>'; // .product-grid
+	if ( 'horizontal' === $layout && $q->max_num_pages > 1 ) {
+		$out .= '<button type="button" class="food-products-more" data-page="2" data-max-pages="' . esc_attr( $q->max_num_pages ) . '" data-category="' . esc_attr( $cat ) . '" data-limit="' . esc_attr( $limit ) . '" data-action="' . esc_attr( admin_url( 'admin-ajax.php' ) ) . '" data-nonce="' . esc_attr( wp_create_nonce( 'food_products_more' ) ) . '" aria-label="' . esc_attr__( 'Load more products', 'blocksy-child' ) . '">' . esc_html__( 'Load more', 'blocksy-child' ) . '</button>';
+	} elseif ( 'vertical' === $layout && $pagination && $q->max_num_pages > 1 ) {
+		$out .= '<nav class="food-products-pagination" aria-label="' . esc_attr__( 'Product pages', 'blocksy-child' ) . '">';
+		$out .= paginate_links( array( 'total' => $q->max_num_pages, 'current' => max( 1, absint( get_query_var( 'food_page', 1 ) ) ), 'format' => '?food_page=%#%', 'type' => 'list' ) );
+		$out .= '</nav>';
+	}
+	$out .= '</section>';
 
 	// optional show more button (links to category archive if provided, else shop)
 	if ( $show_more ) {
@@ -157,6 +175,28 @@ function blocksy_child_food_products_shortcode( $atts ) {
 }
 add_shortcode( 'food_products', 'blocksy_child_food_products_shortcode' );
 
+/** Return the next batch for a horizontal product strip. */
+function blocksy_child_food_products_load_more() {
+	check_ajax_referer( 'food_products_more', 'nonce' );
+	$page = max( 1, absint( $_POST['page'] ?? 1 ) );
+	$limit = min( 30, max( 1, absint( $_POST['limit'] ?? 6 ) ) );
+	$category = sanitize_text_field( wp_unslash( $_POST['category'] ?? '' ) );
+	$args = array( 'post_type' => 'product', 'post_status' => 'publish', 'posts_per_page' => $limit, 'paged' => $page, 'orderby' => 'date' );
+	if ( $category ) {
+		$args['tax_query'] = array( array( 'taxonomy' => 'product_cat', 'field' => 'slug', 'terms' => array_map( 'trim', explode( ',', $category ) ) ) );
+	}
+	$query = new WP_Query( $args );
+	ob_start();
+	while ( $query->have_posts() ) {
+		$query->the_post();
+		wc_get_template_part( 'content', 'product' );
+	}
+	wp_reset_postdata();
+	wp_send_json_success( array( 'html' => ob_get_clean(), 'has_more' => $page < $query->max_num_pages ) );
+}
+add_action( 'wp_ajax_food_products_more', 'blocksy_child_food_products_load_more' );
+add_action( 'wp_ajax_nopriv_food_products_more', 'blocksy_child_food_products_load_more' );
+
 /**
  * Shortcode: category_cards
  * Render product categories as horizontally scrollable cards matching supplied design.
@@ -168,7 +208,8 @@ function blocksy_child_category_cards_shortcode( $atts ) {
 	}
 	$atts = shortcode_atts( array(
 		'limit'  => 6,
-		'parent' => 0,
+		'parent'  => 0,
+		'exclude' => '',
 	), $atts, 'category_cards' );
 
 	$args = array(
@@ -178,6 +219,16 @@ function blocksy_child_category_cards_shortcode( $atts ) {
 		'orderby'    => 'menu_order',
 		'number'     => intval( $atts['limit'] ),
 	);
+	if ( $atts['exclude'] ) {
+		$exclude_ids = array();
+		foreach ( array_map( 'trim', explode( ',', sanitize_text_field( $atts['exclude'] ) ) ) as $exclude_slug ) {
+			$exclude_term = get_term_by( 'slug', $exclude_slug, 'product_cat' );
+			if ( $exclude_term && ! is_wp_error( $exclude_term ) ) {
+				$exclude_ids[] = (int) $exclude_term->term_id;
+			}
+		}
+		$args['exclude'] = $exclude_ids;
+	}
 
 	$terms = get_terms( $args );
 	if ( is_wp_error( $terms ) || empty( $terms ) ) {

@@ -136,8 +136,11 @@ add_shortcode( 'food_home', function() {
 			<a class="food-home-cta" href="<?php echo esc_url( $shop_url ); ?>"><?php esc_html_e( 'Explore the menu', 'blocksy-child' ); ?></a>
 		</div>
 	</section>
-	<section class="food-home-section"><h2><?php esc_html_e( 'Browse categories', 'blocksy-child' ); ?></h2><?php echo do_shortcode( '[category_cards limit="4"]' ); ?></section>
-	<section class="food-home-section"><h2><?php esc_html_e( 'Customer favorites', 'blocksy-child' ); ?></h2><?php echo do_shortcode( '[food_products limit="6" columns="3" show_more="true" show_more_text="See the full menu"]' ); ?></section>
+	<section class="food-home-section food-home-categories"><h2><?php esc_html_e( 'Browse categories', 'blocksy-child' ); ?></h2><?php echo do_shortcode( '[category_cards limit="4" parent="0" exclude="uncategorized"]' ); ?></section>
+	<section class="food-home-section food-home-products"><h2><?php esc_html_e( 'Burgers', 'blocksy-child' ); ?></h2><?php echo do_shortcode( '[food_products category="burgers" limit="10" columns="6" layout="horizontal" pagination="false"]' ); ?></section>
+	<section class="food-home-section food-home-products"><h2><?php esc_html_e( 'Pizza', 'blocksy-child' ); ?></h2><?php echo do_shortcode( '[food_products category="pizza" limit="10" columns="6" layout="horizontal" pagination="false"]' ); ?></section>
+	<section class="food-home-section food-home-products"><h2><?php esc_html_e( 'Drinks', 'blocksy-child' ); ?></h2><?php echo do_shortcode( '[food_products category="drinks" limit="10" columns="6" layout="horizontal" pagination="false"]' ); ?></section>
+	<section class="food-home-section food-home-products"><h2><?php esc_html_e( 'Sides', 'blocksy-child' ); ?></h2><?php echo do_shortcode( '[food_products category="sides" limit="10" columns="6" layout="horizontal" pagination="false"]' ); ?></section>
 	<?php return ob_get_clean();
 } );
 
